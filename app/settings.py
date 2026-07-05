@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     # TTL (in seconds) for semi-static data (heroes, maps, gamemodes, roles)
     static_data_ttl: int = 86400
 
+    # Pacing of upstream requests, must stay below OverFast's per-IP rate limit
+    upstream_requests_per_second: float = 20
+
     # Maximum allowed GraphQL query depth
     max_query_depth: int = 10
 

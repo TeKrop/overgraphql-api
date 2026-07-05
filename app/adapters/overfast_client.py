@@ -1,6 +1,7 @@
 """httpx implementation of the OverFastPort, with TTL caching for semi-static data"""
 
 import asyncio
+from collections import defaultdict
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
@@ -58,6 +59,7 @@ class OverFastClient:
         *,
         base_url: str,
         static_data_ttl: int,
+        requests_per_second: float = 20,
         transport: httpx2.AsyncBaseTransport | None = None,
     ) -> None:
         self._client = httpx2.AsyncClient(
@@ -66,6 +68,14 @@ class OverFastClient:
         # ponytail: unbounded-enough single cache; entries = raw JSON of static
         # collections + assembled Hero objects (~50 total)
         self._cache: TTLCache[str, Any] = TTLCache(maxsize=256, ttl=static_data_ttl)
+        # Coalesce concurrent fetches of the same key (GraphQL resolves list
+        # items in parallel: without this, a cold cache means one upstream
+        # call per item and an upstream 429)
+        self._locks: defaultdict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+        # Pace request starts below OverFast's per-IP rate limit (30/s)
+        self._request_interval = 1 / requests_per_second
+        self._pace_lock = asyncio.Lock()
+        self._next_request_at = 0.0
 
     async def aclose(self) -> None:
         await self._client.aclose()
@@ -96,13 +106,17 @@ class OverFastClient:
         if entry is None:
             return None
 
-        detail = await self._get_json(f"/heroes/{key}")
-        if detail is None:
-            return None
+        async with self._locks[cache_key]:
+            if (cached := self._cache.get(cache_key)) is not None:
+                return cached
 
-        hero = _parse_hero(entry, detail)
-        self._cache[cache_key] = hero
-        return hero
+            detail = await self._get_json(f"/heroes/{key}")
+            if detail is None:
+                return None
+
+            hero = _parse_hero(entry, detail)
+            self._cache[cache_key] = hero
+            return hero
 
     # Player entity
 
@@ -138,24 +152,45 @@ class OverFastClient:
         if (cached := self._cache.get(path)) is not None:
             return cached
 
-        data = await self._get_json(path)
-        if data is None:
-            msg = f"OverFast API answered 404 on {path}"
-            raise UpstreamError(msg)
+        async with self._locks[path]:
+            if (cached := self._cache.get(path)) is not None:
+                return cached
 
-        self._cache[path] = data
-        return data
+            data = await self._get_json(path)
+            if data is None:
+                msg = f"OverFast API answered 404 on {path}"
+                raise UpstreamError(msg)
+
+            self._cache[path] = data
+            return data
 
     async def _get_json(
         self, path: str, params: dict[str, str] | None = None
     ) -> Any | None:
-        response = await self._client.get(path, params=params)
+        response = await self._paced_get(path, params)
+        if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+            # Shared IP budget: honor Retry-After and retry once
+            await asyncio.sleep(float(response.headers.get("Retry-After", "1")))
+            response = await self._paced_get(path, params)
         if response.status_code == HTTPStatus.NOT_FOUND:
             return None
         if response.is_error:
             msg = f"OverFast API answered {response.status_code} on {path}"
             raise UpstreamError(msg)
         return response.json()
+
+    async def _paced_get(
+        self, path: str, params: dict[str, str] | None
+    ) -> httpx2.Response:
+        async with self._pace_lock:
+            now = asyncio.get_running_loop().time()
+            wait = self._next_request_at - now
+            self._next_request_at = max(now, self._next_request_at) + (
+                self._request_interval
+            )
+        if wait > 0:
+            await asyncio.sleep(wait)
+        return await self._client.get(path, params=params)
 
 
 # Parsers: raw OverFast JSON -> domain models

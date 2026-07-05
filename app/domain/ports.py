@@ -7,7 +7,6 @@ if TYPE_CHECKING:
         Gamemode,
         Hero,
         HeroCareerStatsEntry,
-        HeroDetails,
         Map,
         Platform,
         PlayerGamemode,
@@ -32,7 +31,7 @@ class OverFastPort(Protocol):
 
     async def get_heroes(self) -> list[Hero]: ...
 
-    async def get_hero(self, key: str) -> HeroDetails | None: ...
+    async def get_hero(self, key: str) -> Hero | None: ...
 
     async def get_player_summary(self, player_id: str) -> PlayerSummary | None: ...
 

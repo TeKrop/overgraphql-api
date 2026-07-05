@@ -2,19 +2,17 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from app.domain.models import Hero, RoleKey
+from app.domain.models import Role, RoleKey
 
 
-def test_hero_construction_and_immutability():
-    hero = Hero(
-        key="ana",
-        name="Ana",
-        portrait="https://example.com/ana.png",
-        role=RoleKey.SUPPORT,
-        subrole="tactician",
-        gamemodes=["quickplay", "competitive"],
+def test_model_construction_and_immutability():
+    role = Role(
+        key=RoleKey.SUPPORT,
+        name="Support",
+        icon="https://example.com/support.svg",
+        description="Support heroes heal and empower their allies.",
     )
 
-    assert hero.role == "support"
+    assert role.key == "support"
     with pytest.raises(FrozenInstanceError):
-        hero.name = "Nope"  # ty: ignore[invalid-assignment]
+        role.name = "Nope"  # ty: ignore[invalid-assignment]

@@ -57,18 +57,6 @@ class Map:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class Hero:
-    """Summary tier of a hero, from the heroes list endpoint"""
-
-    key: str
-    name: str
-    portrait: str
-    role: RoleKey
-    subrole: str
-    gamemodes: list[str]
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
 class HeroBackground:
     url: str
     sizes: list[str]
@@ -132,9 +120,17 @@ class Story:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class HeroDetails:
-    """Detail tier of a hero, fetched lazily from the hero details endpoint"""
+class Hero:
+    """Complete hero, assembled by the adapter from the heroes list
+    endpoint (key, portrait, gamemodes...) and the hero details endpoint.
+    """
 
+    key: str
+    name: str
+    portrait: str
+    role: RoleKey
+    subrole: str
+    gamemodes: list[str]
     description: str
     backgrounds: list[HeroBackground]
     location: str

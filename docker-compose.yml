@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      target: ${BUILD_TARGET:-main}
+    command: /code/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8080
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://0.0.0.0:8080/graphql || exit 1"]
+      interval: 5s
+      timeout: 5s

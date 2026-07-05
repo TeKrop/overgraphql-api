@@ -109,7 +109,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["SLF001"]  # Ignore private member access in tests
+"tests/**" = ["SLF001", "PLR2004", "TC001"]  # Allow private member access, magic values and runtime port imports in tests
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx2
 import pytest
 
@@ -115,6 +117,7 @@ async def make_client():
         client = OverFastClient(
             base_url="http://testserver",
             static_data_ttl=3600,
+            requests_per_second=10000,
             transport=httpx2.MockTransport(handler),
         )
         clients.append(client)
@@ -299,6 +302,40 @@ async def test_get_player_stats_sends_params_and_flattens(make_client):
     assert stats[1].categories[0].stats[0].key == "time_played"
     assert stats[1].categories[0].stats[0].label == "Time Played"
     assert stats[1].categories[0].stats[0].value == 3600
+
+
+async def test_concurrent_static_fetches_are_coalesced(make_client):
+    client, calls = make_client(
+        {"/gamemodes": [], "/heroes": HEROES, "/heroes/ana": HERO_ANA}
+    )
+
+    await asyncio.gather(*(client.get_gamemodes() for _ in range(20)))
+    await asyncio.gather(*(client.get_hero("ana") for _ in range(20)))
+
+    assert [call.url.path for call in calls] == ["/gamemodes", "/heroes", "/heroes/ana"]
+
+
+async def test_rate_limited_request_retries_after_delay():
+    responses = [
+        httpx2.Response(429, headers={"Retry-After": "0"}, json={"error": "rate"}),
+        httpx2.Response(200, json=ROLES),
+    ]
+
+    def handler(_: httpx2.Request) -> httpx2.Response:
+        return responses.pop(0)
+
+    client = OverFastClient(
+        base_url="http://testserver",
+        static_data_ttl=3600,
+        requests_per_second=10000,
+        transport=httpx2.MockTransport(handler),
+    )
+
+    roles = await client.get_roles()
+
+    assert roles[0].name == "Support"
+    assert responses == []
+    await client.aclose()
 
 
 async def test_upstream_error_raises():

@@ -245,12 +245,14 @@ class PlayerStatsSummary:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CareerStat:
     key: str
+    label: str
     value: int | float
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CareerStatCategory:
     category: str
+    label: str
     stats: list[CareerStat]
 
 

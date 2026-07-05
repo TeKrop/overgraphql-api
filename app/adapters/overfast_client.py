@@ -366,13 +366,16 @@ def _parse_career_stats(data: dict[str, Any]) -> list[HeroCareerStatsEntry]:
             hero=hero_key,
             categories=[
                 CareerStatCategory(
-                    category=category,
+                    category=category["category"],
+                    label=category["label"],
                     stats=[
-                        CareerStat(key=key, value=value) for key, value in stats.items()
+                        CareerStat(
+                            key=stat["key"], label=stat["label"], value=stat["value"]
+                        )
+                        for stat in category["stats"]
                     ],
                 )
-                for category, stats in categories.items()
-                if stats is not None
+                for category in categories
             ],
         )
         for hero_key, categories in data.items()

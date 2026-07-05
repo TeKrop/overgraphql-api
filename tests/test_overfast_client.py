@@ -266,7 +266,26 @@ async def test_get_player_stats_summary_flattens_heroes_dict(make_client):
 
 
 async def test_get_player_stats_sends_params_and_flattens(make_client):
-    payload = {"ana": {"game": {"time_played": 3600}, "combat": None}}
+    payload = {
+        "all-heroes": [
+            {
+                "category": "game",
+                "label": "Game",
+                "stats": [
+                    {"key": "time_played", "label": "Time Played", "value": 7200},
+                ],
+            },
+        ],
+        "ana": [
+            {
+                "category": "game",
+                "label": "Game",
+                "stats": [
+                    {"key": "time_played", "label": "Time Played", "value": 3600},
+                ],
+            },
+        ],
+    }
     client, calls = make_client({"/players/TeKrop-2217/stats": payload})
 
     stats = await client.get_player_stats(
@@ -274,10 +293,12 @@ async def test_get_player_stats_sends_params_and_flattens(make_client):
     )
 
     assert dict(calls[0].url.params) == {"platform": "pc", "gamemode": "competitive"}
-    assert stats[0].hero == "ana"
-    assert stats[0].categories[0].category == "game"
-    assert stats[0].categories[0].stats[0].key == "time_played"
-    assert stats[0].categories[0].stats[0].value == 3600
+    assert [entry.hero for entry in stats] == ["all-heroes", "ana"]
+    assert stats[1].categories[0].category == "game"
+    assert stats[1].categories[0].label == "Game"
+    assert stats[1].categories[0].stats[0].key == "time_played"
+    assert stats[1].categories[0].stats[0].label == "Time Played"
+    assert stats[1].categories[0].stats[0].value == 3600
 
 
 async def test_upstream_error_raises():

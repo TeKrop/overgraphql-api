@@ -1,0 +1,54 @@
+name: "Build"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    name: ruff, ty & pytest
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.14"]
+        uv-version: ["0.9.28"]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          version: "${{ matrix.uv-version }}"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install the project
+        run: uv sync --frozen --no-cache
+
+      - name: Run ruff code analysis
+        run: uv run ruff check .
+
+      - name: Run ty code analysis
+        run: uv run ty check .
+
+      - name: Run tests suite
+        run: uv run python -m pytest -v --cov=app/ --cov-fail-under=80 tests/
+
+  startup-check:
+    name: Docker startup check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build and start the app, wait for healthy state
+        run: docker compose up --build --detach --wait
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs

@@ -1,4 +1,4 @@
-# ⚡ OverGraphQL API
+# 🕸️ OverGraphQL API
 [![Build Status](https://github.com/TeKrop/overgraphql-api/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/TeKrop/overgraphql-api/actions/workflows/build.yml)
 [![Issues](https://img.shields.io/github/issues/TeKrop/overgraphql-api)](https://github.com/TeKrop/overgraphql-api/issues)
 [![License: MIT](https://img.shields.io/github/license/TeKrop/overgraphql-api)](https://github.com/TeKrop/overgraphql-api/blob/main/LICENSE)
@@ -106,7 +106,7 @@ Every list query (`roles`, `gamemodes`, `maps`, `heroes`) accepts an optional `k
 Player profile and statistics — select only what you need, each stats field triggers its own upstream fetch:
 
 ```graphql
-query MyQuery {
+query PlayerProfileAndStats {
   player(playerId: "TeKrop-2217") {
     avatar
     namecard

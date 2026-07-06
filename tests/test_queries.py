@@ -82,18 +82,36 @@ async def test_heroes_query_with_nested_details():
     assert hero["story"]["chapters"] == [{"title": "Origins"}]
 
 
-async def test_hero_query_resolves_role_relation():
-    result = await execute('{ hero(key: "ana") { name role { key name } } }')
+async def test_heroes_query_with_key_resolves_role_relation():
+    result = await execute('{ heroes(key: "ana") { name role { key name } } }')
 
     assert result.errors is None
-    assert result.data["hero"] == {
-        "name": "Ana",
-        "role": {"key": "SUPPORT", "name": "Support"},
-    }
+    assert result.data["heroes"] == [
+        {"name": "Ana", "role": {"key": "SUPPORT", "name": "Support"}},
+    ]
 
 
-async def test_hero_query_unknown_key_returns_null():
-    result = await execute('{ hero(key: "unknown") { name } }')
+async def test_heroes_query_with_unknown_key_returns_empty_list():
+    result = await execute('{ heroes(key: "unknown") { name } }')
 
     assert result.errors is None
-    assert result.data["hero"] is None
+    assert result.data["heroes"] == []
+
+
+async def test_key_filter_on_cached_list_entities():
+    result = await execute(
+        """
+        {
+          roles(key: "support") { name }
+          gamemodes(key: "escort") { name }
+          maps(key: "dorado") { name }
+          missing: maps(key: "unknown") { name }
+        }
+        """
+    )
+
+    assert result.errors is None
+    assert result.data["roles"] == [{"name": "Support"}]
+    assert result.data["gamemodes"] == [{"name": "Escort"}]
+    assert result.data["maps"] == [{"name": "Dorado"}]
+    assert result.data["missing"] == []

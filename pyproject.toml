@@ -111,7 +111,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["SLF001", "PLR2004", "TC001", "ARG002"]  # Private member access, magic values, runtime imports, unused args in fakes
 "app/graphql/**" = ["TC001", "TC002"]  # Strawberry resolves annotations at runtime
-"app/main.py" = ["ARG002"]  # get_context override must accept request/response
+"app/main.py" = ["ARG001", "ARG002"]  # Starlette endpoints and strawberry overrides must accept request/response
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

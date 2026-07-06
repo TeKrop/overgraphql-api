@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OverGraphQL API</title>
+    <meta name="description" content="Overwatch 2 heroes, maps, gamemodes and player statistics through a single GraphQL endpoint." />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>&#x1f578;</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Roboto:wght@400;700" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #04070f;
+        --bg-alt: #0e1321;
+        --orange: #ff9c00;
+        --blue: #1fb8ff;
+        --text: #f4f5f7;
+        --muted: #94a2c3;
+        --border: rgba(255, 255, 255, 0.08);
+        --code-bg: rgba(3, 6, 12, 0.85);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Roboto", "Segoe UI", Arial, sans-serif;
+        color: var(--text);
+        background: #121a31;
+        background-attachment: fixed;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 48px 24px 64px;
+      }
+
+      header { text-align: center; margin-bottom: 48px; }
+
+      h1 {
+        font-size: 2.6rem;
+        margin: 0 0 8px;
+        letter-spacing: 0.02em;
+      }
+
+      h1 .accent { color: var(--orange); }
+
+      .tagline {
+        color: var(--muted);
+        font-size: 1.15rem;
+        max-width: 640px;
+        margin: 0 auto 28px;
+        line-height: 1.5;
+      }
+
+      .tagline a { color: var(--blue); text-decoration: none; }
+      .tagline a:hover { text-decoration: underline; }
+
+      .buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+      .button {
+        display: inline-block;
+        padding: 12px 26px;
+        border-radius: 6px;
+        font-weight: 700;
+        text-decoration: none;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-size: 0.9rem;
+        border: 1px solid var(--border);
+        color: var(--text);
+        background: var(--bg-alt);
+        transition: transform 0.1s ease, background 0.2s ease;
+      }
+
+      .button:hover { transform: translateY(-1px); }
+
+      .button.primary {
+        background: var(--orange);
+        border-color: var(--orange);
+        color: #191100;
+      }
+
+      h2 {
+        font-size: 1.05rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--orange);
+        margin: 44px 0 14px;
+      }
+
+      p { line-height: 1.6; color: var(--text); }
+      p .muted { color: var(--muted); }
+
+      code, pre {
+        font-family: "Fira Code", Consolas, monospace;
+        font-size: 0.88rem;
+      }
+
+      code.inline {
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 2px 7px;
+        color: var(--blue);
+      }
+
+      .examples { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+      @media (max-width: 760px) { .examples { grid-template-columns: 1fr; } }
+
+      .example {
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .example h3 {
+        margin: 0;
+        padding: 10px 16px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .example h3 a { color: var(--orange); text-decoration: none; float: right; }
+
+      .example pre { margin: 0; padding: 16px; overflow-x: auto; line-height: 1.5; }
+
+      .k { color: var(--blue); }
+      .a { color: var(--orange); }
+      .s { color: #33c38c; }
+
+      footer {
+        margin-top: 56px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 0.85rem;
+        text-align: center;
+        line-height: 1.7;
+      }
+
+      footer a { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>🕸️ Over<span class="accent">GraphQL</span> API</h1>
+        <p class="tagline">
+          Overwatch 2 heroes, roles, gamemodes, maps and player statistics
+          through a single GraphQL endpoint — a facade over
+          <a href="https://overfast-api.tekrop.fr">OverFast API</a>,
+          reshaped into one relational graph so you fetch exactly the data
+          you need in one query.
+        </p>
+        <div class="buttons">
+          <a class="button primary" href="/graphql">Open GraphiQL</a>
+          <a class="button" href="https://github.com/TeKrop/overgraphql-api">GitHub</a>
+          <a class="button" href="https://overfast-api.tekrop.fr">OverFast API</a>
+        </div>
+      </header>
+
+      <h2>Getting started</h2>
+      <p>
+        Send your queries to <code class="inline">POST /graphql</code>.
+        The schema is fully documented and introspectable: open
+        <a class="tagline" href="/graphql" style="color: var(--blue); text-decoration: none;">GraphiQL</a>
+        for autocompletion, the schema explorer and a runnable example —
+        or start from one of the queries below.
+      </p>
+
+      <h2>Example queries</h2>
+      <div class="examples">
+        <div class="example">
+          <h3>Static data <a href='/graphql?q=query%20HeroesAndMaps%20%7B%0A%20%20heroes(key%3A%20%22ana%22)%20%7B%0A%20%20%20%20name%0A%20%20%20%20description%0A%20%20%20%20role%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20maps%20%7B%0A%20%20%20%20name%0A%20%20%20%20gamemodes%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'>Run it ▸</a></h3>
+          <pre><span class="k">query</span> HeroesAndMaps {
+  <span class="a">heroes</span>(key: <span class="s">"ana"</span>) {
+    name
+    description
+    role {
+      name
+    }
+  }
+  <span class="a">maps</span> {
+    name
+    gamemodes {
+      name
+    }
+  }
+}</pre>
+        </div>
+        <div class="example">
+          <h3>Player statistics <a href='/graphql?q=query%20PlayerProfileAndStats%20%7B%0A%20%20player(playerId%3A%20%22TeKrop-2217%22)%20%7B%0A%20%20%20%20username%0A%20%20%20%20title%0A%20%20%20%20statsSummary%20%7B%0A%20%20%20%20%20%20general%20%7B%0A%20%20%20%20%20%20%20%20winrate%0A%20%20%20%20%20%20%20%20kda%0A%20%20%20%20%20%20%20%20gamesPlayed%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'>Run it ▸</a></h3>
+          <pre><span class="k">query</span> PlayerProfileAndStats {
+  <span class="a">player</span>(playerId: <span class="s">"TeKrop-2217"</span>) {
+    username
+    title
+    statsSummary {
+      general {
+        winrate
+        kda
+        gamesPlayed
+      }
+    }
+  }
+}</pre>
+        </div>
+      </div>
+
+      <h2>Good to know</h2>
+      <p class="tagline" style="margin: 0; max-width: none; text-align: left;">
+        Semi-static data (heroes, roles, gamemodes, maps) is cached for 24 hours.
+        Player data is always fresh from OverFast API. Every list query accepts an
+        optional <code class="inline">key</code> filter, and an unknown player
+        returns <code class="inline">null</code>.
+      </p>
+
+      <footer>
+        Data comes from <a href="https://github.com/TeKrop/overfast-api">OverFast API</a>,
+        scraping Blizzard's official Overwatch pages.<br />
+        Overwatch is a trademark of Blizzard Entertainment, Inc. This project is not
+        affiliated with Blizzard Entertainment. <a href="https://github.com/TeKrop/overgraphql-api/blob/main/LICENSE">MIT License</a>.
+      </footer>
+    </main>
+  </body>
+</html>

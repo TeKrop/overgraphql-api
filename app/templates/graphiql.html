@@ -1,0 +1,234 @@
+<!doctype html>
+<!-- Customized copy of strawberry-graphql's bundled graphiql.html (title,
+     favicon, theme accents, default query). When upgrading strawberry past
+     0.320, diff against its template to pick up CDN bumps. -->
+<html>
+  <head>
+    <title>OverGraphQL API - GraphiQL</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,
+        <svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22>
+            <text y=%22.9em%22 font-size=%2280%22>&#x1f578;</text>
+        </svg>"
+    />
+    <style>
+      body {
+        height: 100%;
+        margin: 0;
+        width: 100%;
+        overflow: hidden;
+        background: #121a31;
+      }
+
+      #graphiql {
+        height: 100vh;
+        display: flex;
+      }
+
+      /* OverFast theme accents: orange primary, blue secondary */
+      .graphiql-container {
+        --color-primary: 37, 100%, 50%;
+        --color-secondary: 199, 100%, 56%;
+      }
+
+      .docExplorerHide {
+        display: none;
+      }
+
+      .doc-explorer-contents {
+        overflow-y: hidden !important;
+      }
+
+      .docExplorerWrap {
+        width: unset !important;
+        min-width: unset !important;
+      }
+
+      .graphiql-explorer-actions select {
+        margin-left: 4px;
+      }
+    </style>
+
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"
+      integrity="sha384-tMH8h3BGESGckSAVGZ82T9n90ztNXxvdwvdM6UoR56cYcf+0iGXBliJ29D+wZ/x8"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"
+      integrity="sha384-bm7MnzvK++ykSwVJ2tynSE5TRdN+xL418osEVF2DE/L/gfWHj91J2Sphe582B1Bh"
+    ></script>
+
+    <script
+      crossorigin
+      src="https://unpkg.com/js-cookie@3.0.5/dist/js.cookie.min.js"
+      integrity="sha384-/vxhYfM1LENRhdpZ8dwEsQn/X4VhpbEZSiU4m/FwR+PVpzar4fkEOw8FP9Y+OfQN"
+    ></script>
+
+    <link
+      crossorigin
+      rel="stylesheet"
+      href="https://unpkg.com/graphiql@3.8.3/graphiql.min.css"
+      integrity="sha384-Mq3vbRBY71jfjQAt/DcjxUIYY33ksal4cgdRt9U/hNPvHBCaT2JfJ/PTRiPKf0aM"
+    />
+
+    <link
+      crossorigin
+      rel="stylesheet"
+      href="https://unpkg.com/@graphiql/plugin-explorer@1.0.2/dist/style.css"
+      integrity="sha384-5DFJlDPW2tSATRbM8kzoP1j194jexLswuNmClWoRr2Q0x7R68JIQzPHZ02Faktwi"
+    />
+  </head>
+
+  <body>
+    <div id="graphiql" class="graphiql-container">Loading...</div>
+    <script
+      crossorigin
+      src="https://unpkg.com/graphiql@3.8.3/graphiql.min.js"
+      integrity="sha384-HbRVEFG0JGJZeAHCJ9Xm2+tpknBQ7QZmNlO/DgZtkZ0aJSypT96YYGRNod99l9Ie"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/@graphiql/plugin-explorer@1.0.2/dist/index.umd.js"
+      integrity="sha384-2oonKe47vfHIZnmB6ZZ10vl7T0Y+qrHQF2cmNTaFDuPshpKqpUMGMc9jgj9MLDZ9"
+    ></script>
+    <script>
+      const EXAMPLE_QUERY = `# Welcome to the OverGraphQL API 🕸️
+#
+# Overwatch 2 heroes, roles, gamemodes, maps and player statistics,
+# served by a GraphQL facade over OverFast API.
+#
+#   Run a query:    Ctrl-Enter (or the play button above)
+#   Autocomplete:   Ctrl-Space
+#   Documentation:  every type and field is described, browse the
+#                   schema with the book icon in the sidebar
+#
+# More examples on the landing page: /
+#
+# Here is a runnable example to get you started:
+
+query HeroAndPlayer {
+  heroes(key: "ana") {
+    name
+    description
+    role {
+      name
+    }
+  }
+  player(playerId: "TeKrop-2217") {
+    username
+    title
+    statsSummary {
+      general {
+        winrate
+        kda
+      }
+    }
+  }
+}
+`;
+
+      // Parse URL parameters for sharing queries
+      const parameters = {};
+
+      for (const entry of window.location.search.slice(1).split("&")) {
+        const eq = entry.indexOf("=");
+        if (eq >= 0) {
+          parameters[decodeURIComponent(entry.slice(0, eq))] =
+            decodeURIComponent(entry.slice(eq + 1));
+        }
+      }
+
+      function updateURL(data) {
+        Object.assign(parameters, data);
+
+        const newSearch =
+          "?" +
+          Object.keys(parameters)
+            .filter(function (key) {
+              return Boolean(parameters[key]);
+            })
+            .map(function (key) {
+              return (
+                encodeURIComponent(key) +
+                "=" +
+                encodeURIComponent(parameters[key])
+              );
+            })
+            .join("&");
+        history.replaceState(null, null, newSearch);
+      }
+
+      const fetchURL = window.location.href.split("?")[0];
+
+      function httpUrlToWebSockeUrl(url) {
+        const parsedURL = new URL(url);
+        const protocol = parsedURL.protocol === "http:" ? "ws:" : "wss:";
+        parsedURL.protocol = protocol;
+        parsedURL.hash = "";
+        return parsedURL.toString();
+      }
+
+      const defaultHeaders = {};
+      const csrfToken = Cookies.get("csrftoken");
+
+      if (csrfToken) {
+        defaultHeaders["x-csrftoken"] = csrfToken;
+      }
+
+      const subscriptionUrl = httpUrlToWebSockeUrl(fetchURL);
+
+      const fetcher = GraphiQL.createFetcher({
+        url: fetchURL,
+        headers: defaultHeaders,
+        subscriptionUrl,
+      });
+
+      function GraphiQLWithExplorer() {
+        const [query, setQuery] = React.useState(
+          parameters.q || EXAMPLE_QUERY,
+        );
+        const [variables, setVariables] = React.useState(
+          parameters.variables,
+        );
+        const [headers, setHeaders] = React.useState(parameters.headers);
+
+        function onEditQuery(newQuery) {
+          setQuery(newQuery);
+          updateURL({ q: newQuery });
+        }
+
+        function onEditVariables(newVariables) {
+          setVariables(newVariables);
+          updateURL({ variables: newVariables });
+        }
+
+        function onEditHeaders(newHeaders) {
+          setHeaders(newHeaders);
+        }
+
+        const explorerPlugin = GraphiQLPluginExplorer.explorerPlugin();
+
+        return React.createElement(GraphiQL, {
+          fetcher: fetcher,
+          defaultEditorToolsVisibility: true,
+          plugins: [explorerPlugin],
+          query: query,
+          variables: variables,
+          headers: headers,
+          onEditQuery: onEditQuery,
+          onEditVariables: onEditVariables,
+          onEditHeaders: onEditHeaders,
+          inputValueDeprecation: true,
+          isHeadersEditorEnabled: true,
+          shouldPersistHeaders: true,
+        });
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById("graphiql"));
+      root.render(React.createElement(GraphiQLWithExplorer));
+    </script>
+  </body>
+</html>

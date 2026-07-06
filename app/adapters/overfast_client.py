@@ -1,6 +1,7 @@
 """httpx implementation of the OverFastPort, with TTL caching for semi-static data"""
 
 import asyncio
+import logging
 from collections import defaultdict
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
@@ -44,6 +45,8 @@ from app.domain.models import (
     StoryChapter,
     TotalStats,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class OverFastClient:
@@ -100,6 +103,7 @@ class OverFastClient:
     async def get_hero(self, key: str) -> Hero | None:
         cache_key = f"hero:{key}"
         if (cached := self._cache.get(cache_key)) is not None:
+            logger.debug("cache hit for %s", cache_key)
             return cached
 
         entry = (await self._heroes_index()).get(key)
@@ -150,6 +154,7 @@ class OverFastClient:
 
     async def _get_static(self, path: str) -> Any:
         if (cached := self._cache.get(path)) is not None:
+            logger.debug("cache hit for %s", path)
             return cached
 
         async with self._locks[path]:
@@ -170,7 +175,11 @@ class OverFastClient:
         response = await self._paced_get(path, params)
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             # Shared IP budget: honor Retry-After and retry once
-            await asyncio.sleep(float(response.headers.get("Retry-After", "1")))
+            retry_after = float(response.headers.get("Retry-After", "1"))
+            logger.warning(
+                "rate limited by OverFast on %s, retrying in %.1f s", path, retry_after
+            )
+            await asyncio.sleep(retry_after)
             response = await self._paced_get(path, params)
         if response.status_code == HTTPStatus.NOT_FOUND:
             return None
@@ -189,8 +198,13 @@ class OverFastClient:
                 self._request_interval
             )
         if wait > 0:
+            logger.debug("pacing request to %s, waiting %.0f ms", path, wait * 1000)
             await asyncio.sleep(wait)
-        return await self._client.get(path, params=params)
+        start = asyncio.get_running_loop().time()
+        response = await self._client.get(path, params=params)
+        elapsed_ms = (asyncio.get_running_loop().time() - start) * 1000
+        logger.info("GET %s -> %d in %.0f ms", path, response.status_code, elapsed_ms)
+        return response
 
 
 # Parsers: raw OverFast JSON -> domain models

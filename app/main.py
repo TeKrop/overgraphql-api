@@ -6,7 +6,10 @@ from strawberry.asgi import GraphQL
 
 from app.adapters.overfast_client import OverFastClient
 from app.graphql.schema import schema
+from app.logging_config import configure_logging
 from app.settings import settings
+
+configure_logging()
 
 if TYPE_CHECKING:
     from starlette.requests import Request

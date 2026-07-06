@@ -24,5 +24,8 @@ class Settings(BaseSettings):
     # Maximum tokens per query document, rejects giant queries at parse time
     max_query_tokens: int = 1000
 
+    # Minimum level of the application logs (DEBUG, INFO, WARNING, ERROR)
+    log_level: str = "INFO"
+
 
 settings = Settings()

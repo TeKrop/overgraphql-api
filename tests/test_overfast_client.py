@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import httpx2
 import pytest
@@ -315,7 +316,7 @@ async def test_concurrent_static_fetches_are_coalesced(make_client):
     assert [call.url.path for call in calls] == ["/gamemodes", "/heroes", "/heroes/ana"]
 
 
-async def test_rate_limited_request_retries_after_delay():
+async def test_rate_limited_request_retries_after_delay(caplog):
     responses = [
         httpx2.Response(429, headers={"Retry-After": "0"}, json={"error": "rate"}),
         httpx2.Response(200, json=ROLES),
@@ -331,11 +332,25 @@ async def test_rate_limited_request_retries_after_delay():
         transport=httpx2.MockTransport(handler),
     )
 
-    roles = await client.get_roles()
+    with caplog.at_level(logging.WARNING):
+        roles = await client.get_roles()
 
     assert roles[0].name == "Support"
     assert responses == []
+    assert "rate limited by OverFast on /roles" in caplog.text
     await client.aclose()
+
+
+async def test_upstream_requests_are_logged(make_client, caplog):
+    client, _ = make_client({"/roles": ROLES})
+
+    with caplog.at_level(logging.DEBUG):
+        await client.get_roles()
+        await client.get_roles()
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any(message.startswith("GET /roles -> 200 in ") for message in messages)
+    assert "cache hit for /roles" in messages
 
 
 async def test_upstream_error_raises():

@@ -118,19 +118,18 @@ async def test_key_filter_on_cached_list_entities():
     assert result.data["missing"] == []
 
 
-async def test_player_summary_query():
+async def test_player_query_flattens_profile():
     result = await execute(
         """
         {
           player(playerId: "TeKrop-2217") {
             playerId
-            summary {
-              username
-              endorsement { level }
-              competitive {
-                pc { season damage { division tier } tank { division } }
-                console { season }
-              }
+            username
+            title
+            endorsement { level }
+            competitive {
+              pc { season damage { division tier } tank { division } }
+              console { season }
             }
           }
         }
@@ -140,14 +139,15 @@ async def test_player_summary_query():
     assert result.errors is None
     player = result.data["player"]
     assert player["playerId"] == "TeKrop-2217"
-    assert player["summary"]["username"] == "TeKrop"
-    assert player["summary"]["endorsement"] == {"level": 3}
-    assert player["summary"]["competitive"]["pc"] == {
+    assert player["username"] == "TeKrop"
+    assert player["title"] == "Bytefixer"
+    assert player["endorsement"] == {"level": 3}
+    assert player["competitive"]["pc"] == {
         "season": 15,
         "damage": {"division": "diamond", "tier": 3},
         "tank": None,
     }
-    assert player["summary"]["competitive"]["console"] is None
+    assert player["competitive"]["console"] is None
 
 
 async def test_player_stats_summary_query():
@@ -180,7 +180,7 @@ async def test_player_stats_query_passes_enum_args():
         """
         {
           player(playerId: "TeKrop-2217") {
-            stats(platform: PC, gamemode: COMPETITIVE) {
+            careerStats(platform: PC, gamemode: COMPETITIVE) {
               hero
               categories { category label stats { key label value } }
             }
@@ -192,7 +192,7 @@ async def test_player_stats_query_passes_enum_args():
 
     assert result.errors is None
     assert client.last_stats_args == (Platform.PC, PlayerGamemode.COMPETITIVE)
-    assert result.data["player"]["stats"] == [
+    assert result.data["player"]["careerStats"] == [
         {
             "hero": "all-heroes",
             "categories": [
@@ -208,22 +208,8 @@ async def test_player_stats_query_passes_enum_args():
     ]
 
 
-async def test_player_unknown_id_returns_null_fields():
-    result = await execute(
-        """
-        {
-          player(playerId: "Unknown-1234") {
-            summary { username }
-            statsSummary { general { kda } }
-            stats(platform: PC, gamemode: QUICKPLAY) { hero }
-          }
-        }
-        """
-    )
+async def test_player_unknown_id_returns_null():
+    result = await execute('{ player(playerId: "Unknown-1234") { username } }')
 
     assert result.errors is None
-    assert result.data["player"] == {
-        "summary": None,
-        "statsSummary": None,
-        "stats": None,
-    }
+    assert result.data["player"] is None

@@ -30,7 +30,6 @@ Endorsement = strawberry.type(models.Endorsement)
 CompetitiveRank = strawberry.type(models.CompetitiveRank)
 PlatformCompetitiveRanks = strawberry.type(models.PlatformCompetitiveRanks)
 CompetitiveRanks = strawberry.type(models.CompetitiveRanks)
-PlayerSummary = strawberry.type(models.PlayerSummary)
 TotalStats = strawberry.type(models.TotalStats)
 AverageStats = strawberry.type(models.AverageStats)
 StatsSummary = strawberry.type(models.StatsSummary)
@@ -94,22 +93,25 @@ class Hero:
 
 @strawberry.type
 class Player:
-    """Lazy handle on a player tag: each field triggers its own upstream call,
-    so an unknown player yields null fields rather than an upfront error.
+    """Player profile with lazy stats: profile fields come from the eager
+    summary fetch, stats fields each trigger their own upstream call.
     """
 
     player_id: str
-
-    @strawberry.field
-    async def summary(self, info: Info) -> models.PlayerSummary | None:
-        return await get_client(info).get_player_summary(self.player_id)
+    username: str
+    avatar: str | None
+    namecard: str | None
+    title: str | None
+    endorsement: models.Endorsement | None
+    competitive: models.CompetitiveRanks | None
+    last_updated_at: int | None
 
     @strawberry.field
     async def stats_summary(self, info: Info) -> models.PlayerStatsSummary | None:
         return await get_client(info).get_player_stats_summary(self.player_id)
 
     @strawberry.field
-    async def stats(
+    async def career_stats(
         self,
         info: Info,
         platform: models.Platform,
@@ -117,6 +119,19 @@ class Player:
     ) -> list[models.HeroCareerStatsEntry] | None:
         return await get_client(info).get_player_stats(
             self.player_id, platform, gamemode
+        )
+
+    @classmethod
+    def from_domain(cls, player_id: str, summary: models.PlayerSummary) -> Player:
+        return cls(
+            player_id=player_id,
+            username=summary.username,
+            avatar=summary.avatar,
+            namecard=summary.namecard,
+            title=summary.title,
+            endorsement=summary.endorsement,
+            competitive=summary.competitive,
+            last_updated_at=summary.last_updated_at,
         )
 
 

@@ -1,12 +1,13 @@
+from app.domain.models import Platform, PlayerGamemode
 from app.domain.ports import OverFastPort
 from app.graphql.schema import schema
 from tests.fakes import FakeOverFastClient
 
 
-async def execute(query: str, **variables):
+async def execute(query: str, client: FakeOverFastClient | None = None, **variables):
     return await schema.execute(
         query,
-        context_value={"client": FakeOverFastClient()},
+        context_value={"client": client or FakeOverFastClient()},
         variable_values=variables or None,
     )
 
@@ -115,3 +116,114 @@ async def test_key_filter_on_cached_list_entities():
     assert result.data["gamemodes"] == [{"name": "Escort"}]
     assert result.data["maps"] == [{"name": "Dorado"}]
     assert result.data["missing"] == []
+
+
+async def test_player_summary_query():
+    result = await execute(
+        """
+        {
+          player(playerId: "TeKrop-2217") {
+            playerId
+            summary {
+              username
+              endorsement { level }
+              competitive {
+                pc { season damage { division tier } tank { division } }
+                console { season }
+              }
+            }
+          }
+        }
+        """
+    )
+
+    assert result.errors is None
+    player = result.data["player"]
+    assert player["playerId"] == "TeKrop-2217"
+    assert player["summary"]["username"] == "TeKrop"
+    assert player["summary"]["endorsement"] == {"level": 3}
+    assert player["summary"]["competitive"]["pc"] == {
+        "season": 15,
+        "damage": {"division": "diamond", "tier": 3},
+        "tank": None,
+    }
+    assert player["summary"]["competitive"]["console"] is None
+
+
+async def test_player_stats_summary_query():
+    result = await execute(
+        """
+        {
+          player(playerId: "TeKrop-2217") {
+            statsSummary {
+              general { gamesPlayed winrate total { healing } average { deaths } }
+              roles { support { kda } tank { kda } }
+              heroes { hero stats { gamesWon } }
+            }
+          }
+        }
+        """
+    )
+
+    assert result.errors is None
+    stats_summary = result.data["player"]["statsSummary"]
+    assert stats_summary["general"]["gamesPlayed"] == 10
+    assert stats_summary["general"]["total"] == {"healing": 30000}
+    assert stats_summary["roles"] == {"support": {"kda": 3.5}, "tank": None}
+    assert stats_summary["heroes"] == [{"hero": "ana", "stats": {"gamesWon": 6}}]
+
+
+async def test_player_stats_query_passes_enum_args():
+    client = FakeOverFastClient()
+
+    result = await execute(
+        """
+        {
+          player(playerId: "TeKrop-2217") {
+            stats(platform: PC, gamemode: COMPETITIVE) {
+              hero
+              categories { category label stats { key label value } }
+            }
+          }
+        }
+        """,
+        client=client,
+    )
+
+    assert result.errors is None
+    assert client.last_stats_args == (Platform.PC, PlayerGamemode.COMPETITIVE)
+    assert result.data["player"]["stats"] == [
+        {
+            "hero": "all-heroes",
+            "categories": [
+                {
+                    "category": "game",
+                    "label": "Game",
+                    "stats": [
+                        {"key": "time_played", "label": "Time Played", "value": 7200.0},
+                    ],
+                },
+            ],
+        },
+    ]
+
+
+async def test_player_unknown_id_returns_null_fields():
+    result = await execute(
+        """
+        {
+          player(playerId: "Unknown-1234") {
+            summary { username }
+            statsSummary { general { kda } }
+            stats(platform: PC, gamemode: QUICKPLAY) { hero }
+          }
+        }
+        """
+    )
+
+    assert result.errors is None
+    assert result.data["player"] == {
+        "summary": None,
+        "statsSummary": None,
+        "stats": None,
+    }

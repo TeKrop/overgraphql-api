@@ -5,7 +5,7 @@ from strawberry.types import Info
 
 from app.domain import models
 from app.graphql.context import get_client
-from app.graphql.types import Hero, Map
+from app.graphql.types import Hero, Map, Player
 
 
 @strawberry.type
@@ -40,3 +40,7 @@ class Query:
             hero = await get_client(info).get_hero(key)
             return [] if hero is None else [Hero.from_domain(hero)]
         return [Hero.from_domain(hero) for hero in await get_client(info).get_heroes()]
+
+    @strawberry.field
+    def player(self, player_id: str) -> Player:
+        return Player(player_id=player_id)

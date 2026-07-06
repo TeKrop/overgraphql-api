@@ -246,7 +246,8 @@ class PlayerStatsSummary:
 class CareerStat:
     key: str
     label: str
-    value: int | float
+    # Upstream mixes ints and floats; GraphQL has no scalar unions, Float covers both
+    value: float
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

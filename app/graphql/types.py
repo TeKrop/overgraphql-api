@@ -13,6 +13,8 @@ from app.domain.exceptions import UpstreamError
 from app.graphql.context import get_client
 
 RoleKey = strawberry.enum(models.RoleKey)
+Platform = strawberry.enum(models.Platform)
+PlayerGamemode = strawberry.enum(models.PlayerGamemode)
 Role = strawberry.type(models.Role)
 Gamemode = strawberry.type(models.Gamemode)
 HeroBackground = strawberry.type(models.HeroBackground)
@@ -24,6 +26,20 @@ PerksContainer = strawberry.type(models.PerksContainer)
 Media = strawberry.type(models.Media)
 StoryChapter = strawberry.type(models.StoryChapter)
 Story = strawberry.type(models.Story)
+Endorsement = strawberry.type(models.Endorsement)
+CompetitiveRank = strawberry.type(models.CompetitiveRank)
+PlatformCompetitiveRanks = strawberry.type(models.PlatformCompetitiveRanks)
+CompetitiveRanks = strawberry.type(models.CompetitiveRanks)
+PlayerSummary = strawberry.type(models.PlayerSummary)
+TotalStats = strawberry.type(models.TotalStats)
+AverageStats = strawberry.type(models.AverageStats)
+StatsSummary = strawberry.type(models.StatsSummary)
+RolesStats = strawberry.type(models.RolesStats)
+HeroStatsEntry = strawberry.type(models.HeroStatsEntry)
+PlayerStatsSummary = strawberry.type(models.PlayerStatsSummary)
+CareerStat = strawberry.type(models.CareerStat)
+CareerStatCategory = strawberry.type(models.CareerStatCategory)
+HeroCareerStatsEntry = strawberry.type(models.HeroCareerStatsEntry)
 
 
 @strawberry.type
@@ -73,6 +89,34 @@ class Hero:
             stadium_powers=hero.stadium_powers,
             story=hero.story,
             role_key=hero.role,
+        )
+
+
+@strawberry.type
+class Player:
+    """Lazy handle on a player tag: each field triggers its own upstream call,
+    so an unknown player yields null fields rather than an upfront error.
+    """
+
+    player_id: str
+
+    @strawberry.field
+    async def summary(self, info: Info) -> models.PlayerSummary | None:
+        return await get_client(info).get_player_summary(self.player_id)
+
+    @strawberry.field
+    async def stats_summary(self, info: Info) -> models.PlayerStatsSummary | None:
+        return await get_client(info).get_player_stats_summary(self.player_id)
+
+    @strawberry.field
+    async def stats(
+        self,
+        info: Info,
+        platform: models.Platform,
+        gamemode: models.PlayerGamemode,
+    ) -> list[models.HeroCareerStatsEntry] | None:
+        return await get_client(info).get_player_stats(
+            self.player_id, platform, gamemode
         )
 
 

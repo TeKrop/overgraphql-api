@@ -32,6 +32,9 @@ def configure_logging() -> None:
             "loggers": {
                 # httpcore2 floods DEBUG with connection internals
                 "httpcore2": {"level": "INFO"},
+                # httpx2 logs every request at INFO, duplicating our own
+                # upstream log line (which also carries the duration)
+                "httpx2": {"level": "WARNING"},
                 "uvicorn": {
                     "handlers": ["console"],
                     "level": level,

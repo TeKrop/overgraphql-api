@@ -18,5 +18,11 @@ class Settings(BaseSettings):
     # Maximum allowed GraphQL query depth
     max_query_depth: int = 10
 
+    # Maximum aliases per query, limits upstream call amplification
+    max_query_aliases: int = 15
+
+    # Maximum tokens per query document, rejects giant queries at parse time
+    max_query_tokens: int = 1000
+
 
 settings = Settings()

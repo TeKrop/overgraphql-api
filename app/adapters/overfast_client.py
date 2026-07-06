@@ -405,7 +405,9 @@ def _parse_career_stats(data: dict[str, Any]) -> list[HeroCareerStatsEntry]:
                     label=category["label"],
                     stats=[
                         CareerStat(
-                            key=stat["key"], label=stat["label"], value=stat["value"]
+                            key=stat["key"],
+                            label=stat["label"],
+                            value=float(stat["value"]),
                         )
                         for stat in category["stats"]
                     ],

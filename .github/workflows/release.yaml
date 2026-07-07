@@ -54,3 +54,19 @@ jobs:
             git pull --rebase
             git push
           fi
+
+  deploy:
+    name: Deploy on VPS
+    needs: release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            bash "${{ secrets.DEPLOY_SCRIPT_PATH }}"

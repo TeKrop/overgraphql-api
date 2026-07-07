@@ -1,5 +1,7 @@
 # 🕸️ OverGraphQL API
+![Python](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/TeKrop/2962eb8ca65862892d43ce8b929d9d48/raw/python-version.json)
 [![Build Status](https://github.com/TeKrop/overgraphql-api/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/TeKrop/overgraphql-api/actions/workflows/build.yml)
+![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/TeKrop/2962eb8ca65862892d43ce8b929d9d48/raw/coverage.json)
 [![Issues](https://img.shields.io/github/issues/TeKrop/overgraphql-api)](https://github.com/TeKrop/overgraphql-api/issues)
 [![License: MIT](https://img.shields.io/github/license/TeKrop/overgraphql-api)](https://github.com/TeKrop/overgraphql-api/blob/main/LICENSE)
 

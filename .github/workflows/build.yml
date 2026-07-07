@@ -37,7 +37,33 @@ jobs:
         run: uv run ty check .
 
       - name: Run tests suite
-        run: uv run python -m pytest -v --cov=app/ --cov-fail-under=80 tests/
+        run: |
+          uv run python -m pytest -v --cov=app/ --cov-fail-under=80 --cov-report=json --cov-report=term tests/
+          echo "COVERAGE=$(jq -r '.totals.percent_covered_display' coverage.json)" >> $GITHUB_ENV
+
+      - name: Update test coverage badge
+        if: github.event_name == 'push'
+        uses: schneegans/dynamic-badges-action@v1.8.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: 2962eb8ca65862892d43ce8b929d9d48
+          filename: coverage.json
+          label: coverage
+          message: ${{ env.COVERAGE }}%
+          minColorRange: 50
+          maxColorRange: 90
+          valColorRange: ${{ env.COVERAGE }}
+
+      - name: Update python version badge
+        if: github.event_name == 'push'
+        uses: schneegans/dynamic-badges-action@v1.8.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: 2962eb8ca65862892d43ce8b929d9d48
+          filename: python-version.json
+          label: python
+          message: v${{ matrix.python-version }}
+          color: blue
 
   startup-check:
     name: Docker startup check

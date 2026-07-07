@@ -1,6 +1,6 @@
 [project]
 name = "overgraphql-api"
-version = "0.1.0"
+version = "1.0.0"
 description = "GraphQL API wrapper for OverFast API"
 license = { file = "LICENSE" }
 authors = [

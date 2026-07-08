@@ -13,7 +13,7 @@ dependencies = [
     "httpx2==2.5.*",
     "pydantic-settings==2.14.*",
     "strawberry-graphql[asgi]==0.320.*",
-    "uvicorn==0.50.*",
+    "uvicorn==0.51.*",
 ]
 
 [project.urls]

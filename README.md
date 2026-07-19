@@ -1,9 +1,9 @@
 # 🕸️ OverGraphQL API
-![Python](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/TeKrop/2962eb8ca65862892d43ce8b929d9d48/raw/python-version.json)
+![Python](https://shields.tekrop.fr/endpoint?url=https://gist.githubusercontent.com/TeKrop/2962eb8ca65862892d43ce8b929d9d48/raw/python-version.json)
 [![Build Status](https://github.com/TeKrop/overgraphql-api/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/TeKrop/overgraphql-api/actions/workflows/build.yml)
-![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/TeKrop/2962eb8ca65862892d43ce8b929d9d48/raw/coverage.json)
-[![Issues](https://img.shields.io/github/issues/TeKrop/overgraphql-api)](https://github.com/TeKrop/overgraphql-api/issues)
-[![License: MIT](https://img.shields.io/github/license/TeKrop/overgraphql-api)](https://github.com/TeKrop/overgraphql-api/blob/main/LICENSE)
+![Coverage](https://shields.tekrop.fr/endpoint?url=https://gist.githubusercontent.com/TeKrop/2962eb8ca65862892d43ce8b929d9d48/raw/coverage.json)
+[![Issues](https://shields.tekrop.fr/github/issues/TeKrop/overgraphql-api)](https://github.com/TeKrop/overgraphql-api/issues)
+[![License: MIT](https://shields.tekrop.fr/github/license/TeKrop/overgraphql-api)](https://github.com/TeKrop/overgraphql-api/blob/main/LICENSE)
 
 > OverGraphQL API exposes Overwatch 2 heroes, roles, gamemodes, maps and player statistics through a single GraphQL endpoint. It's a pure facade over [OverFast API](https://github.com/TeKrop/overfast-api): it never talks to Blizzard directly and doesn't parse anything itself — it reshapes OverFast REST data into one relational graph, so you can fetch exactly the data you need in a single query. Built with **Strawberry GraphQL** and **httpx**.
 

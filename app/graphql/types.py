@@ -41,6 +41,12 @@ Platform = strawberry.enum(models.Platform, description="Gaming platform")
 PlayerGamemode = strawberry.enum(
     models.PlayerGamemode, description="Gamemode in which statistics are recorded"
 )
+Region = strawberry.enum(
+    models.Region, description="Region in which statistics are recorded"
+)
+CompetitiveDivision = strawberry.enum(
+    models.CompetitiveDivision, description="Competitive division"
+)
 
 Role = register(
     models.Role,
@@ -307,6 +313,15 @@ HeroCareerStatsEntry = register(
     },
 )
 
+HeroStats = register(
+    models.HeroStats,
+    "Pickrate and winrate of a hero, for a given platform/gamemode/region",
+    {
+        "pickrate": "Pickrate of the hero (in percent)",
+        "winrate": "Winrate of the hero (in percent)",
+    },
+)
+
 
 @strawberry.type(description="Playable Overwatch 2 hero")
 class Hero:
@@ -347,6 +362,43 @@ class Hero:
             msg = f"Role '{self.role_key}' not found upstream"
             raise UpstreamError(msg)
         return role
+
+    @strawberry.field(
+        description="Pickrate and winrate for this hero, for a given platform, "
+        "gamemode and region, optionally narrowed to a map or competitive "
+        "division. Null if OverFast has no data for this combination."
+    )
+    async def stats(
+        self,
+        info: Info,
+        platform: Annotated[
+            models.Platform,
+            strawberry.argument(description="Platform on which stats were recorded"),
+        ],
+        gamemode: Annotated[
+            models.PlayerGamemode,
+            strawberry.argument(description="Gamemode in which stats were recorded"),
+        ],
+        region: Annotated[
+            models.Region,
+            strawberry.argument(description="Region on which stats were recorded"),
+        ],
+        map_key: Annotated[
+            str | None,
+            strawberry.argument(
+                name="map", description="Restrict stats to a single map"
+            ),
+        ] = None,
+        competitive_division: Annotated[
+            models.CompetitiveDivision | None,
+            strawberry.argument(
+                description="Restrict stats to a single competitive division"
+            ),
+        ] = None,
+    ) -> models.HeroStats | None:
+        return await get_client(info).get_hero_stats(
+            self.key, platform, gamemode, region, map_key, competitive_division
+        )
 
     @classmethod
     def from_domain(cls, hero: models.Hero) -> Hero:

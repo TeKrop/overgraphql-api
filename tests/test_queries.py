@@ -1,4 +1,4 @@
-from app.domain.models import Platform, PlayerGamemode
+from app.domain.models import CompetitiveDivision, Platform, PlayerGamemode, Region
 from app.domain.ports import OverFastPort
 from app.graphql.schema import schema
 from app.settings import settings
@@ -247,6 +247,61 @@ async def test_player_stats_query_passes_enum_args():
             ],
         },
     ]
+
+
+async def test_hero_stats_query_passes_args():
+    client = FakeOverFastClient()
+
+    result = await execute(
+        """
+        {
+          heroes(key: "ana") {
+            stats(
+              platform: PC
+              gamemode: COMPETITIVE
+              region: EUROPE
+              map: "hanaoka"
+              competitiveDivision: DIAMOND
+            ) {
+              pickrate
+              winrate
+            }
+          }
+        }
+        """,
+        client=client,
+    )
+
+    assert result.errors is None
+    assert client.last_hero_stats_args == (
+        "ana",
+        Platform.PC,
+        PlayerGamemode.COMPETITIVE,
+        Region.EUROPE,
+        "hanaoka",
+        CompetitiveDivision.DIAMOND,
+    )
+    assert result.data["heroes"] == [{"stats": {"pickrate": 12.5, "winrate": 52.3}}]
+
+
+async def test_hero_stats_query_optional_args_default_to_none():
+    client = FakeOverFastClient()
+
+    result = await execute(
+        '{ heroes(key: "ana") { stats(platform: PC, gamemode: COMPETITIVE, '
+        "region: EUROPE) { pickrate } } }",
+        client=client,
+    )
+
+    assert result.errors is None
+    assert client.last_hero_stats_args == (
+        "ana",
+        Platform.PC,
+        PlayerGamemode.COMPETITIVE,
+        Region.EUROPE,
+        None,
+        None,
+    )
 
 
 async def test_player_unknown_id_returns_null():

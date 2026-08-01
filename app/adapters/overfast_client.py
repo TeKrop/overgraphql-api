@@ -19,6 +19,7 @@ from app.domain.models import (
     AverageStats,
     CareerStat,
     CareerStatCategory,
+    CompetitiveDivision,
     CompetitiveRank,
     CompetitiveRanks,
     Endorsement,
@@ -26,6 +27,7 @@ from app.domain.models import (
     Hero,
     HeroBackground,
     HeroCareerStatsEntry,
+    HeroStats,
     HeroStatsEntry,
     HitPoints,
     Map,
@@ -38,6 +40,7 @@ from app.domain.models import (
     PlayerSearchResult,
     PlayerStatsSummary,
     PlayerSummary,
+    Region,
     Role,
     RoleKey,
     RolesStats,
@@ -123,6 +126,20 @@ class OverFastClient:
             self._cache[cache_key] = hero
             return hero
 
+    async def get_hero_stats(
+        self,
+        hero_key: str,
+        platform: Platform,
+        gamemode: PlayerGamemode,
+        region: Region,
+        map_key: str | None = None,
+        competitive_division: CompetitiveDivision | None = None,
+    ) -> HeroStats | None:
+        index = await self._get_hero_stats_index(
+            platform, gamemode, region, map_key, competitive_division
+        )
+        return index.get(hero_key)
+
     # Player entity
 
     async def search_players(self, name: str, limit: int) -> list[PlayerSearchResult]:
@@ -161,6 +178,45 @@ class OverFastClient:
     async def _heroes_index(self) -> dict[str, dict[str, Any]]:
         entries = await self._get_static("/heroes")
         return {entry["key"]: entry for entry in entries}
+
+    async def _get_hero_stats_index(
+        self,
+        platform: Platform,
+        gamemode: PlayerGamemode,
+        region: Region,
+        map_key: str | None,
+        competitive_division: CompetitiveDivision | None,
+    ) -> dict[str, HeroStats]:
+        cache_key = (
+            f"hero-stats:{platform}:{gamemode}:{region}:{map_key}:"
+            f"{competitive_division}"
+        )
+        if (cached := self._cache.get(cache_key)) is not None:
+            logger.debug("cache hit for %s", cache_key)
+            return cached
+
+        async with self._locks[cache_key]:
+            if (cached := self._cache.get(cache_key)) is not None:
+                return cached
+
+            params = {
+                "platform": platform.value,
+                "gamemode": gamemode.value,
+                "region": region.value,
+            }
+            if map_key is not None:
+                params["map"] = map_key
+            if competitive_division is not None:
+                params["competitive_division"] = competitive_division.value
+
+            data = await self._get_json("/heroes/stats", params=params)
+            if data is None:
+                msg = "OverFast API answered 404 on /heroes/stats"
+                raise UpstreamError(msg)
+
+            index = _parse_hero_stats(data)
+            self._cache[cache_key] = index
+            return index
 
     async def _get_static(self, path: str) -> Any:
         if (cached := self._cache.get(path)) is not None:
@@ -453,3 +509,10 @@ def _parse_career_stats(data: dict[str, Any]) -> list[HeroCareerStatsEntry]:
         )
         for hero_key, categories in data.items()
     ]
+
+
+def _parse_hero_stats(data: list[dict[str, Any]]) -> dict[str, HeroStats]:
+    return {
+        entry["hero"]: HeroStats(pickrate=entry["pickrate"], winrate=entry["winrate"])
+        for entry in data
+    }

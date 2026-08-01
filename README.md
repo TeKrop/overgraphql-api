@@ -105,6 +105,22 @@ query StaticData {
 
 Every list query (`roles`, `gamemodes`, `maps`, `heroes`) accepts an optional `key` filter; an unknown key returns an empty list.
 
+Hero pickrate and winrate, for a given platform/gamemode/region (optionally narrowed to a map or competitive division):
+
+```graphql
+query HeroStats {
+  heroes(key: "ana") {
+    name
+    stats(platform: PC, gamemode: COMPETITIVE, region: EUROPE) {
+      pickrate
+      winrate
+    }
+  }
+}
+```
+
+`stats` is `null` when OverFast has no data for the requested combination.
+
 Player profile and statistics — select only what you need, each stats field triggers its own upstream fetch:
 
 ```graphql

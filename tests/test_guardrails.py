@@ -1,5 +1,7 @@
 """Abuse guardrails: query depth, alias count and token count limits"""
 
+import pytest
+
 from app.graphql.schema import schema
 from app.settings import settings
 from tests.fakes import FakeOverFastClient
@@ -9,7 +11,7 @@ async def execute(query: str):
     return await schema.execute(query, context_value={"client": FakeOverFastClient()})
 
 
-async def test_query_depth_over_limit_is_rejected(monkeypatch):
+async def test_query_depth_over_limit_is_rejected(monkeypatch: pytest.MonkeyPatch):
     # The schema graph is acyclic so real queries cannot reach the default
     # limit; lower it to prove the wiring (extension lambdas read settings
     # at execution time)

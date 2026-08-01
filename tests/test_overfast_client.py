@@ -10,7 +10,7 @@ from app.domain.exceptions import UpstreamError
 from app.domain.models import Platform, PlayerGamemode, RoleKey
 from app.domain.ports import OverFastPort
 
-MakeClient = Callable[[dict[str, object]], tuple[OverFastClient, list]]
+MakeClient = Callable[[dict[str, object]], tuple[OverFastClient, list[httpx2.Request]]]
 
 ROLES = [{"key": "support", "name": "Support", "icon": "icon", "description": "desc"}]
 

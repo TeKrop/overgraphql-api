@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.3.0 (2026-08-01)
+
+### Features
+
+- Add Hero.stats (pickrate/winrate) from /heroes/stats
+  ([#22](https://github.com/TeKrop/overgraphql-api/pull/22),
+  [`3f31a9a`](https://github.com/TeKrop/overgraphql-api/commit/3f31a9a26c3ab8c52f25cc74922eb9a755d4e060))
+
+
 ## v1.2.1 (2026-08-01)
 
 ### Bug Fixes

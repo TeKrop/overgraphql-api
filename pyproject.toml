@@ -132,3 +132,6 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
+
+[tool.ruff.lint.pylint]
+max-args = 6  # Hero.stats/get_hero_stats mirror OverFast's 5-filter /heroes/stats endpoint

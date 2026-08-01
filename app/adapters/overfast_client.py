@@ -7,7 +7,7 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable, Hashable
 
 import httpx2
 from cachetools import TTLCache
@@ -19,6 +19,7 @@ from app.domain.models import (
     AverageStats,
     CareerStat,
     CareerStatCategory,
+    CompetitiveDivision,
     CompetitiveRank,
     CompetitiveRanks,
     Endorsement,
@@ -26,6 +27,7 @@ from app.domain.models import (
     Hero,
     HeroBackground,
     HeroCareerStatsEntry,
+    HeroStats,
     HeroStatsEntry,
     HitPoints,
     Map,
@@ -38,6 +40,7 @@ from app.domain.models import (
     PlayerSearchResult,
     PlayerStatsSummary,
     PlayerSummary,
+    Region,
     Role,
     RoleKey,
     RolesStats,
@@ -71,11 +74,13 @@ class OverFastClient:
         )
         # ponytail: unbounded-enough single cache; entries = raw JSON of static
         # collections + assembled Hero objects (~50 total)
-        self._cache: TTLCache[str, Any] = TTLCache(maxsize=256, ttl=static_data_ttl)
+        self._cache: TTLCache[Hashable, Any] = TTLCache(
+            maxsize=256, ttl=static_data_ttl
+        )
         # Coalesce concurrent fetches of the same key (GraphQL resolves list
         # items in parallel: without this, a cold cache means one upstream
         # call per item and an upstream 429)
-        self._locks: defaultdict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+        self._locks: defaultdict[Hashable, asyncio.Lock] = defaultdict(asyncio.Lock)
         # Pace request starts below OverFast's per-IP rate limit (30/s)
         self._request_interval = 1 / requests_per_second
         self._pace_lock = asyncio.Lock()
@@ -123,6 +128,20 @@ class OverFastClient:
             self._cache[cache_key] = hero
             return hero
 
+    async def get_hero_stats(
+        self,
+        hero_key: str,
+        platform: Platform,
+        gamemode: PlayerGamemode,
+        region: Region,
+        map_key: str | None = None,
+        competitive_division: CompetitiveDivision | None = None,
+    ) -> HeroStats | None:
+        index = await self._get_hero_stats_index(
+            platform, gamemode, region, map_key, competitive_division
+        )
+        return index.get(hero_key)
+
     # Player entity
 
     async def search_players(self, name: str, limit: int) -> list[PlayerSearchResult]:
@@ -162,22 +181,70 @@ class OverFastClient:
         entries = await self._get_static("/heroes")
         return {entry["key"]: entry for entry in entries}
 
+    async def _get_hero_stats_index(
+        self,
+        platform: Platform,
+        gamemode: PlayerGamemode,
+        region: Region,
+        map_key: str | None,
+        competitive_division: CompetitiveDivision | None,
+    ) -> dict[str, HeroStats]:
+        cache_key = (
+            "hero-stats",
+            platform.value,
+            gamemode.value,
+            region.value,
+            map_key,
+            None if competitive_division is None else competitive_division.value,
+        )
+
+        async def fetch() -> dict[str, HeroStats]:
+            params = {
+                "platform": platform.value,
+                "gamemode": gamemode.value,
+                "region": region.value,
+            }
+            if map_key is not None:
+                params["map"] = map_key
+            if competitive_division is not None:
+                params["competitive_division"] = competitive_division.value
+
+            data = await self._get_json("/heroes/stats", params=params)
+            if data is None:
+                msg = f"OverFast API answered 404 on /heroes/stats with params {params}"
+                raise UpstreamError(msg)
+            return _parse_hero_stats(data)
+
+        return await self._get_cached(cache_key, fetch)
+
     async def _get_static(self, path: str) -> Any:
-        if (cached := self._cache.get(path)) is not None:
-            logger.debug("cache hit for %s", path)
-            return cached
-
-        async with self._locks[path]:
-            if (cached := self._cache.get(path)) is not None:
-                return cached
-
+        async def fetch() -> Any:
             data = await self._get_json(path)
             if data is None:
                 msg = f"OverFast API answered 404 on {path}"
                 raise UpstreamError(msg)
-
-            self._cache[path] = data
             return data
+
+        return await self._get_cached(path, fetch)
+
+    async def _get_cached[T](
+        self, cache_key: Hashable, fetch: Callable[[], Awaitable[T]]
+    ) -> T:
+        """Coalesced cache-or-fetch: concurrent calls for the same key share
+        one upstream fetch (GraphQL resolves list items in parallel, so an
+        uncoalesced cold cache means one upstream call per item and a 429).
+        """
+        if (cached := self._cache.get(cache_key)) is not None:
+            logger.debug("cache hit for %s", cache_key)
+            return cached
+
+        async with self._locks[cache_key]:
+            if (cached := self._cache.get(cache_key)) is not None:
+                return cached
+
+            value = await fetch()
+            self._cache[cache_key] = value
+            return value
 
     async def _get_json(
         self, path: str, params: dict[str, str] | None = None
@@ -453,3 +520,10 @@ def _parse_career_stats(data: dict[str, Any]) -> list[HeroCareerStatsEntry]:
         )
         for hero_key, categories in data.items()
     ]
+
+
+def _parse_hero_stats(data: list[dict[str, Any]]) -> dict[str, HeroStats]:
+    return {
+        entry["hero"]: HeroStats(pickrate=entry["pickrate"], winrate=entry["winrate"])
+        for entry in data
+    }

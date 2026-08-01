@@ -4,15 +4,18 @@ from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from .models import (
+        CompetitiveDivision,
         Gamemode,
         Hero,
         HeroCareerStatsEntry,
+        HeroStats,
         Map,
         Platform,
         PlayerGamemode,
         PlayerSearchResult,
         PlayerStatsSummary,
         PlayerSummary,
+        Region,
         Role,
     )
 
@@ -50,3 +53,13 @@ class OverFastPort(Protocol):
         platform: Platform,
         gamemode: PlayerGamemode,
     ) -> list[HeroCareerStatsEntry] | None: ...
+
+    async def get_hero_stats(
+        self,
+        hero_key: str,
+        platform: Platform,
+        gamemode: PlayerGamemode,
+        region: Region,
+        map_key: str | None = None,
+        competitive_division: CompetitiveDivision | None = None,
+    ) -> HeroStats | None: ...

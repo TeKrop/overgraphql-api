@@ -118,6 +118,8 @@ SAMPLE_STATS_SUMMARY = models.PlayerStatsSummary(
     heroes=[models.HeroStatsEntry(hero="ana", stats=SAMPLE_STATS)],
 )
 
+SAMPLE_HERO_STATS = models.HeroStats(pickrate=12.5, winrate=52.3)
+
 SAMPLE_CAREER_STATS = [
     models.HeroCareerStatsEntry(
         hero="all-heroes",
@@ -161,6 +163,17 @@ class FakeOverFastClient:
         self.last_stats_args: tuple[models.Platform, models.PlayerGamemode] | None = (
             None
         )
+        self.last_hero_stats_args: (
+            tuple[
+                str,
+                models.Platform,
+                models.PlayerGamemode,
+                models.Region,
+                str | None,
+                models.CompetitiveDivision | None,
+            ]
+            | None
+        ) = None
 
     async def get_roles(self) -> list[models.Role]:
         return self.roles
@@ -199,3 +212,22 @@ class FakeOverFastClient:
     ) -> list[models.HeroCareerStatsEntry] | None:
         self.last_stats_args = (platform, gamemode)
         return SAMPLE_CAREER_STATS if player_id == SAMPLE_PLAYER_ID else None
+
+    async def get_hero_stats(
+        self,
+        hero_key: str,
+        platform: models.Platform,
+        gamemode: models.PlayerGamemode,
+        region: models.Region,
+        map_key: str | None = None,
+        competitive_division: models.CompetitiveDivision | None = None,
+    ) -> models.HeroStats | None:
+        self.last_hero_stats_args = (
+            hero_key,
+            platform,
+            gamemode,
+            region,
+            map_key,
+            competitive_division,
+        )
+        return SAMPLE_HERO_STATS if hero_key == SAMPLE_HERO.key else None

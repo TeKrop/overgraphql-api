@@ -25,6 +25,22 @@ class PlayerGamemode(StrEnum):
     COMPETITIVE = "competitive"
 
 
+class Region(StrEnum):
+    EUROPE = "europe"
+    AMERICAS = "americas"
+    ASIA = "asia"
+
+
+class CompetitiveDivision(StrEnum):
+    BRONZE = "bronze"
+    SILVER = "silver"
+    GOLD = "gold"
+    PLATINUM = "platinum"
+    DIAMOND = "diamond"
+    MASTER = "master"
+    GRANDMASTER = "grandmaster"
+
+
 # Static entities
 
 
@@ -278,3 +294,11 @@ class HeroCareerStatsEntry:
 
     hero: str
     categories: list[CareerStatCategory]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class HeroStats:
+    """Pickrate/winrate of a single hero, for a given platform/gamemode/region"""
+
+    pickrate: float
+    winrate: float

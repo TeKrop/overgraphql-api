@@ -7,7 +7,13 @@ import pytest
 
 from app.adapters.overfast_client import OverFastClient
 from app.domain.exceptions import UpstreamError
-from app.domain.models import Platform, PlayerGamemode, RoleKey
+from app.domain.models import (
+    CompetitiveDivision,
+    Platform,
+    PlayerGamemode,
+    Region,
+    RoleKey,
+)
 from app.domain.ports import OverFastPort
 
 MakeClient = Callable[[dict[str, object]], tuple[OverFastClient, list[httpx2.Request]]]
@@ -362,6 +368,85 @@ async def test_get_player_stats_sends_params_and_flattens(make_client: MakeClien
     assert stats[1].categories[0].stats[0].key == "time_played"
     assert stats[1].categories[0].stats[0].label == "Time Played"
     assert stats[1].categories[0].stats[0].value == 3600
+
+
+async def test_get_hero_stats_sends_params_and_parses(make_client: MakeClient):
+    payload = [
+        {"hero": "ana", "pickrate": 12.5, "winrate": 52.3},
+        {"hero": "reinhardt", "pickrate": 8.1, "winrate": 49.7},
+    ]
+    client, calls = make_client({"/heroes/stats": payload})
+
+    stats = await client.get_hero_stats(
+        "ana",
+        Platform.PC,
+        PlayerGamemode.COMPETITIVE,
+        Region.EUROPE,
+        map_key="hanaoka",
+        competitive_division=CompetitiveDivision.DIAMOND,
+    )
+
+    assert dict(calls[0].url.params) == {
+        "platform": "pc",
+        "gamemode": "competitive",
+        "region": "europe",
+        "map": "hanaoka",
+        "competitive_division": "diamond",
+    }
+    assert stats is not None
+    assert stats.pickrate == 12.5
+    assert stats.winrate == 52.3
+
+
+async def test_get_hero_stats_omits_unset_optional_params(make_client: MakeClient):
+    payload = [{"hero": "ana", "pickrate": 12.5, "winrate": 52.3}]
+    client, calls = make_client({"/heroes/stats": payload})
+
+    await client.get_hero_stats(
+        "ana", Platform.PC, PlayerGamemode.COMPETITIVE, Region.EUROPE
+    )
+
+    assert dict(calls[0].url.params) == {
+        "platform": "pc",
+        "gamemode": "competitive",
+        "region": "europe",
+    }
+
+
+async def test_get_hero_stats_unknown_hero_returns_none(make_client: MakeClient):
+    payload = [{"hero": "ana", "pickrate": 12.5, "winrate": 52.3}]
+    client, _ = make_client({"/heroes/stats": payload})
+
+    stats = await client.get_hero_stats(
+        "unknown", Platform.PC, PlayerGamemode.COMPETITIVE, Region.EUROPE
+    )
+
+    assert stats is None
+
+
+async def test_get_hero_stats_404_raises_upstream_error(make_client: MakeClient):
+    client, _ = make_client({})  # /heroes/stats unmapped -> 404
+
+    with pytest.raises(UpstreamError):
+        await client.get_hero_stats(
+            "ana", Platform.PC, PlayerGamemode.COMPETITIVE, Region.EUROPE
+        )
+
+
+async def test_concurrent_hero_stats_fetches_are_coalesced(make_client: MakeClient):
+    payload = [{"hero": "ana", "pickrate": 12.5, "winrate": 52.3}]
+    client, calls = make_client({"/heroes/stats": payload})
+
+    await asyncio.gather(
+        *(
+            client.get_hero_stats(
+                "ana", Platform.PC, PlayerGamemode.COMPETITIVE, Region.EUROPE
+            )
+            for _ in range(20)
+        )
+    )
+
+    assert [call.url.path for call in calls] == ["/heroes/stats"]
 
 
 async def test_concurrent_static_fetches_are_coalesced(make_client: MakeClient):

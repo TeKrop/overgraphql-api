@@ -41,6 +41,9 @@ version_toml = ["pyproject.toml:project.version"]
 [tool.semantic_release.commit_parser_options]
 parse_squash_commits = false
 
+[tool.semantic_release.changelog]
+exclude_commit_patterns = ['^chore: update uv\.lock for v\d+\.\d+\.\d+$']
+
 [tool.semantic_release.publish]
 upload_to_vcs_release = false
 
@@ -56,6 +59,7 @@ select = [
     "E",     # pycodestyle errors
     "W",     # pycodestyle warnings
     "F",     # pyflakes
+    "ANN",   # flake8-annotations
     "C90",   # mccabe complexity checker
     "I001",  # isort
     "N",     # pep8-naming
@@ -121,8 +125,9 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["SLF001", "PLR2004", "TC001", "ARG002"]  # Private member access, magic values, runtime imports, unused args in fakes
+"tests/**" = ["SLF001", "PLR2004", "TC001", "TC002", "ARG002", "ANN201", "ANN202", "ANN204", "ANN205", "ANN206"]  # Private member access, magic values, runtime imports, unused args in fakes, return typing
 "app/graphql/**" = ["TC001", "TC002"]  # Strawberry resolves annotations at runtime
+"app/adapters/overfast_client.py" = ["ANN401"]  # Raw upstream JSON shape (dict or list) varies per endpoint
 "app/main.py" = ["ARG001", "ARG002"]  # Starlette endpoints and strawberry overrides must accept request/response
 
 [tool.ruff.lint.isort]

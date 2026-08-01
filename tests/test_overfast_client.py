@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections.abc import Callable
 
 import httpx2
 import pytest
@@ -8,6 +9,8 @@ from app.adapters.overfast_client import OverFastClient
 from app.domain.exceptions import UpstreamError
 from app.domain.models import Platform, PlayerGamemode, RoleKey
 from app.domain.ports import OverFastPort
+
+MakeClient = Callable[[dict[str, object]], tuple[OverFastClient, list[httpx2.Request]]]
 
 ROLES = [{"key": "support", "name": "Support", "icon": "icon", "description": "desc"}]
 
@@ -140,7 +143,7 @@ async def test_adapter_satisfies_port():
     await client.aclose()
 
 
-async def test_get_roles_parses_and_caches(make_client):
+async def test_get_roles_parses_and_caches(make_client: MakeClient):
     client, calls = make_client({"/roles": ROLES})
 
     first = await client.get_roles()
@@ -152,7 +155,7 @@ async def test_get_roles_parses_and_caches(make_client):
     assert len(calls) == 1
 
 
-async def test_get_gamemodes_parses(make_client):
+async def test_get_gamemodes_parses(make_client: MakeClient):
     payload = [
         {
             "key": "push",
@@ -170,7 +173,7 @@ async def test_get_gamemodes_parses(make_client):
     assert gamemodes[0].screenshot == "screen"
 
 
-async def test_get_maps_parses(make_client):
+async def test_get_maps_parses(make_client: MakeClient):
     payload = [
         {
             "key": "aatlis",
@@ -190,7 +193,7 @@ async def test_get_maps_parses(make_client):
     assert maps[0].country_code is None
 
 
-async def test_get_hero_assembles_list_entry_and_details(make_client):
+async def test_get_hero_assembles_list_entry_and_details(make_client: MakeClient):
     client, _ = make_client({"/heroes": HEROES, "/heroes/ana": HERO_ANA})
 
     hero = await client.get_hero("ana")
@@ -204,7 +207,9 @@ async def test_get_hero_assembles_list_entry_and_details(make_client):
     assert hero.story.chapters[0].title == "Origins"
 
 
-async def test_get_hero_unknown_key_returns_none_without_detail_call(make_client):
+async def test_get_hero_unknown_key_returns_none_without_detail_call(
+    make_client: MakeClient,
+):
     client, calls = make_client({"/heroes": HEROES})
 
     hero = await client.get_hero("unknown")
@@ -213,7 +218,7 @@ async def test_get_hero_unknown_key_returns_none_without_detail_call(make_client
     assert [call.url.path for call in calls] == ["/heroes"]
 
 
-async def test_get_hero_unreleased_returns_none_on_detail_404(make_client):
+async def test_get_hero_unreleased_returns_none_on_detail_404(make_client: MakeClient):
     client, _ = make_client({"/heroes": HEROES})
 
     hero = await client.get_hero("ana")
@@ -221,7 +226,7 @@ async def test_get_hero_unreleased_returns_none_on_detail_404(make_client):
     assert hero is None
 
 
-async def test_get_heroes_assembles_and_caches(make_client):
+async def test_get_heroes_assembles_and_caches(make_client: MakeClient):
     client, calls = make_client({"/heroes": HEROES, "/heroes/ana": HERO_ANA})
 
     heroes = await client.get_heroes()
@@ -231,7 +236,7 @@ async def test_get_heroes_assembles_and_caches(make_client):
     assert len(calls) == 2  # one list call + one detail call, then full cache hits
 
 
-async def test_search_players_parses_and_sends_params(make_client):
+async def test_search_players_parses_and_sends_params(make_client: MakeClient):
     payload = {
         "total": 1,
         "results": [
@@ -260,7 +265,7 @@ async def test_search_players_parses_and_sends_params(make_client):
     assert results[0].last_updated_at == 1750000000
 
 
-async def test_search_players_no_results(make_client):
+async def test_search_players_no_results(make_client: MakeClient):
     client, calls = make_client({"/players": {"total": 0, "results": []}})
 
     results = await client.search_players("NoSuchPlayer", 10)
@@ -270,27 +275,31 @@ async def test_search_players_no_results(make_client):
     assert [call.url.path for call in calls] == ["/players"]
 
 
-async def test_search_players_404_raises_upstream_error(make_client):
+async def test_search_players_404_raises_upstream_error(make_client: MakeClient):
     client, _ = make_client({})  # /players unmapped -> 404
 
     with pytest.raises(UpstreamError):
         await client.search_players("TeKrop", 10)
 
 
-async def test_get_player_summary_parses_nested_ranks(make_client):
+async def test_get_player_summary_parses_nested_ranks(make_client: MakeClient):
     client, _ = make_client({"/players/TeKrop-2217/summary": PLAYER_SUMMARY})
 
     summary = await client.get_player_summary("TeKrop-2217")
 
     assert summary is not None
     assert summary.username == "TeKrop"
+    assert summary.endorsement is not None
     assert summary.endorsement.level == 3
+    assert summary.competitive is not None
+    assert summary.competitive.pc is not None
+    assert summary.competitive.pc.damage is not None
     assert summary.competitive.pc.damage.division == "diamond"
     assert summary.competitive.pc.tank is None
     assert summary.competitive.console is None
 
 
-async def test_get_player_summary_not_found_returns_none(make_client):
+async def test_get_player_summary_not_found_returns_none(make_client: MakeClient):
     client, _ = make_client({})
 
     summary = await client.get_player_summary("Unknown-1234")
@@ -298,7 +307,7 @@ async def test_get_player_summary_not_found_returns_none(make_client):
     assert summary is None
 
 
-async def test_get_player_stats_summary_flattens_heroes_dict(make_client):
+async def test_get_player_stats_summary_flattens_heroes_dict(make_client: MakeClient):
     payload = {
         "general": STATS_SUMMARY,
         "roles": {"tank": None, "damage": None, "support": STATS_SUMMARY},
@@ -309,13 +318,16 @@ async def test_get_player_stats_summary_flattens_heroes_dict(make_client):
     stats = await client.get_player_stats_summary("TeKrop-2217")
 
     assert stats is not None
+    assert stats.general is not None
     assert stats.general.games_played == 10
+    assert stats.roles is not None
+    assert stats.roles.support is not None
     assert stats.roles.support.winrate == 60.0
     assert [entry.hero for entry in stats.heroes] == ["ana"]
     assert stats.heroes[0].stats.total.healing == 30000
 
 
-async def test_get_player_stats_sends_params_and_flattens(make_client):
+async def test_get_player_stats_sends_params_and_flattens(make_client: MakeClient):
     payload = {
         "all-heroes": [
             {
@@ -343,6 +355,7 @@ async def test_get_player_stats_sends_params_and_flattens(make_client):
     )
 
     assert dict(calls[0].url.params) == {"platform": "pc", "gamemode": "competitive"}
+    assert stats is not None
     assert [entry.hero for entry in stats] == ["all-heroes", "ana"]
     assert stats[1].categories[0].category == "game"
     assert stats[1].categories[0].label == "Game"
@@ -351,7 +364,7 @@ async def test_get_player_stats_sends_params_and_flattens(make_client):
     assert stats[1].categories[0].stats[0].value == 3600
 
 
-async def test_concurrent_static_fetches_are_coalesced(make_client):
+async def test_concurrent_static_fetches_are_coalesced(make_client: MakeClient):
     client, calls = make_client(
         {"/gamemodes": [], "/heroes": HEROES, "/heroes/ana": HERO_ANA}
     )
@@ -362,7 +375,9 @@ async def test_concurrent_static_fetches_are_coalesced(make_client):
     assert [call.url.path for call in calls] == ["/gamemodes", "/heroes", "/heroes/ana"]
 
 
-async def test_rate_limited_request_retries_after_delay(caplog):
+async def test_rate_limited_request_retries_after_delay(
+    caplog: pytest.LogCaptureFixture,
+):
     responses = [
         httpx2.Response(429, headers={"Retry-After": "0"}, json={"error": "rate"}),
         httpx2.Response(200, json=ROLES),
@@ -387,7 +402,9 @@ async def test_rate_limited_request_retries_after_delay(caplog):
     await client.aclose()
 
 
-async def test_upstream_requests_are_logged(make_client, caplog):
+async def test_upstream_requests_are_logged(
+    make_client: MakeClient, caplog: pytest.LogCaptureFixture
+):
     client, _ = make_client({"/roles": ROLES})
 
     with caplog.at_level(logging.DEBUG):

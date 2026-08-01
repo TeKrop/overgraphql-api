@@ -5,7 +5,9 @@ from app.settings import settings
 from tests.fakes import FakeOverFastClient
 
 
-async def execute(query: str, client: FakeOverFastClient | None = None, **variables):
+async def execute(
+    query: str, client: FakeOverFastClient | None = None, **variables: object
+):
     return await schema.execute(
         query,
         context_value={"client": client or FakeOverFastClient()},

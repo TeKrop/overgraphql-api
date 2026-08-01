@@ -41,7 +41,7 @@ def schema_types() -> list[dict]:
     ]
 
 
-def test_every_type_has_a_description(schema_types):
+def test_every_type_has_a_description(schema_types: list[dict]):
     undocumented = [
         schema_type["name"]
         for schema_type in schema_types
@@ -51,7 +51,7 @@ def test_every_type_has_a_description(schema_types):
     assert undocumented == []
 
 
-def test_every_field_has_a_description(schema_types):
+def test_every_field_has_a_description(schema_types: list[dict]):
     undocumented = [
         f"{schema_type['name']}.{field['name']}"
         for schema_type in schema_types
@@ -62,7 +62,7 @@ def test_every_field_has_a_description(schema_types):
     assert undocumented == []
 
 
-def test_every_argument_has_a_description(schema_types):
+def test_every_argument_has_a_description(schema_types: list[dict]):
     undocumented = [
         f"{schema_type['name']}.{field['name']}({arg['name']}:)"
         for schema_type in schema_types

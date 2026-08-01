@@ -1,10 +1,12 @@
 import logging
 
+import pytest
+
 from app.logging_config import configure_logging
 from app.settings import settings
 
 
-def test_configure_logging_applies_level_from_settings(monkeypatch):
+def test_configure_logging_applies_level_from_settings(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(settings, "log_level", "warning")
 
     configure_logging()

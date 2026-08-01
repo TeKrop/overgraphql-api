@@ -14,14 +14,14 @@ async def http():
         yield http
 
 
-async def test_app_serves_graphql_queries(http):
+async def test_app_serves_graphql_queries(http: httpx2.AsyncClient):
     response = await http.post("/graphql", json={"query": "{ roles { key } }"})
 
     assert response.status_code == 200
     assert response.json() == {"data": {"roles": [{"key": "SUPPORT"}]}}
 
 
-async def test_root_serves_landing_page(http):
+async def test_root_serves_landing_page(http: httpx2.AsyncClient):
     response = await http.get("/")
 
     assert response.status_code == 200
@@ -30,7 +30,7 @@ async def test_root_serves_landing_page(http):
     assert 'href="/graphql"' in response.text
 
 
-async def test_graphql_get_serves_customized_graphiql(http):
+async def test_graphql_get_serves_customized_graphiql(http: httpx2.AsyncClient):
     response = await http.get("/graphql", headers={"Accept": "text/html"})
 
     assert response.status_code == 200

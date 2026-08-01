@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.2.1 (2026-08-01)
+
+### Bug Fixes
+
+- Enforce type annotations (ANN) and hide uv.lock bump from changelog
+  ([#21](https://github.com/TeKrop/overgraphql-api/pull/21),
+  [`07bed53`](https://github.com/TeKrop/overgraphql-api/commit/07bed53e089ef3c800ec287d0fa30d959d951038))
+
+
 ## v1.2.0 (2026-08-01)
 
 ### Build System

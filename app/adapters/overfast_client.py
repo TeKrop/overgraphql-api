@@ -211,7 +211,7 @@ class OverFastClient:
 
             data = await self._get_json("/heroes/stats", params=params)
             if data is None:
-                msg = "OverFast API answered 404 on /heroes/stats"
+                msg = f"OverFast API answered 404 on /heroes/stats with params {params}"
                 raise UpstreamError(msg)
             return _parse_hero_stats(data)
 

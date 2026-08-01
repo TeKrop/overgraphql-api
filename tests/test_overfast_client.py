@@ -424,6 +424,15 @@ async def test_get_hero_stats_unknown_hero_returns_none(make_client: MakeClient)
     assert stats is None
 
 
+async def test_get_hero_stats_404_raises_upstream_error(make_client: MakeClient):
+    client, _ = make_client({})  # /heroes/stats unmapped -> 404
+
+    with pytest.raises(UpstreamError):
+        await client.get_hero_stats(
+            "ana", Platform.PC, PlayerGamemode.COMPETITIVE, Region.EUROPE
+        )
+
+
 async def test_concurrent_hero_stats_fetches_are_coalesced(make_client: MakeClient):
     payload = [{"hero": "ana", "pickrate": 12.5, "winrate": 52.3}]
     client, calls = make_client({"/heroes/stats": payload})

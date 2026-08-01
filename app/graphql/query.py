@@ -64,7 +64,7 @@ class Query:
             ),
         ] = 10,
     ) -> list[models.PlayerSearchResult]:
-        limit = min(limit, settings.max_player_search_results)
+        limit = max(1, min(limit, settings.max_player_search_results))
         return await get_client(info).search_players(name, limit)
 
     @strawberry.field(

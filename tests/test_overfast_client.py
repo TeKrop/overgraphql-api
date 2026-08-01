@@ -261,11 +261,20 @@ async def test_search_players_parses_and_sends_params(make_client):
 
 
 async def test_search_players_no_results(make_client):
-    client, _ = make_client({"/players": {"total": 0, "results": []}})
+    client, calls = make_client({"/players": {"total": 0, "results": []}})
 
     results = await client.search_players("NoSuchPlayer", 10)
 
     assert results == []
+    # Bulk endpoint: no per-player fan-out
+    assert [call.url.path for call in calls] == ["/players"]
+
+
+async def test_search_players_404_raises_upstream_error(make_client):
+    client, _ = make_client({})  # /players unmapped -> 404
+
+    with pytest.raises(UpstreamError):
+        await client.search_players("TeKrop", 10)
 
 
 async def test_get_player_summary_parses_nested_ranks(make_client):

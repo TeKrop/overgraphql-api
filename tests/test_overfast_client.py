@@ -231,6 +231,43 @@ async def test_get_heroes_assembles_and_caches(make_client):
     assert len(calls) == 2  # one list call + one detail call, then full cache hits
 
 
+async def test_search_players_parses_and_sends_params(make_client):
+    payload = {
+        "total": 1,
+        "results": [
+            {
+                "player_id": "TeKrop-2217",
+                "name": "TeKrop",
+                "avatar": "avatar",
+                "namecard": "namecard",
+                "title": "Bytefixer",
+                "career_url": "https://overfast-api.tekrop.fr/players/TeKrop-2217",
+                "blizzard_id": "abc",
+                "last_updated_at": 1750000000,
+                "is_public": True,
+            },
+        ],
+    }
+    client, calls = make_client({"/players": payload})
+
+    results = await client.search_players("TeKrop", 10)
+
+    assert dict(calls[0].url.params) == {"name": "TeKrop", "limit": "10"}
+    assert len(results) == 1
+    assert results[0].player_id == "TeKrop-2217"
+    assert results[0].username == "TeKrop"
+    assert results[0].is_public is True
+    assert results[0].last_updated_at == 1750000000
+
+
+async def test_search_players_no_results(make_client):
+    client, _ = make_client({"/players": {"total": 0, "results": []}})
+
+    results = await client.search_players("NoSuchPlayer", 10)
+
+    assert results == []
+
+
 async def test_get_player_summary_parses_nested_ranks(make_client):
     client, _ = make_client({"/players/TeKrop-2217/summary": PLAYER_SUMMARY})
 

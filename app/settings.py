@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     # Pacing of upstream requests, must stay below OverFast's per-IP rate limit
     upstream_requests_per_second: float = 20
 
+    # Maximum results returned by searchPlayers, regardless of the requested limit
+    max_player_search_results: int = 25
+
     # Maximum allowed GraphQL query depth
     max_query_depth: int = 10
 

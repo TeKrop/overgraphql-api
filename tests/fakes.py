@@ -62,6 +62,16 @@ SAMPLE_HERO = models.Hero(
 
 SAMPLE_PLAYER_ID = "TeKrop-2217"
 
+SAMPLE_PLAYER_SEARCH_RESULT = models.PlayerSearchResult(
+    player_id=SAMPLE_PLAYER_ID,
+    username="TeKrop",
+    avatar="https://example.com/avatar.png",
+    namecard=None,
+    title="Bytefixer",
+    is_public=True,
+    last_updated_at=1750000000,
+)
+
 SAMPLE_PLAYER_SUMMARY = models.PlayerSummary(
     username="TeKrop",
     avatar="https://example.com/avatar.png",
@@ -136,11 +146,18 @@ class FakeOverFastClient:
         gamemodes: list[models.Gamemode] | None = None,
         maps: list[models.Map] | None = None,
         heroes: list[models.Hero] | None = None,
+        player_search_results: list[models.PlayerSearchResult] | None = None,
     ) -> None:
         self.roles = [SAMPLE_ROLE] if roles is None else roles
         self.gamemodes = [SAMPLE_GAMEMODE] if gamemodes is None else gamemodes
         self.maps = [SAMPLE_MAP] if maps is None else maps
         self.heroes = [SAMPLE_HERO] if heroes is None else heroes
+        self.player_search_results = (
+            [SAMPLE_PLAYER_SEARCH_RESULT]
+            if player_search_results is None
+            else player_search_results
+        )
+        self.last_search_args: tuple[str, int] | None = None
         self.last_stats_args: tuple[models.Platform, models.PlayerGamemode] | None = (
             None
         )
@@ -159,6 +176,12 @@ class FakeOverFastClient:
 
     async def get_hero(self, key: str) -> models.Hero | None:
         return next((hero for hero in self.heroes if hero.key == key), None)
+
+    async def search_players(
+        self, name: str, limit: int
+    ) -> list[models.PlayerSearchResult]:
+        self.last_search_args = (name, limit)
+        return self.player_search_results
 
     async def get_player_summary(self, player_id: str) -> models.PlayerSummary | None:
         return SAMPLE_PLAYER_SUMMARY if player_id == SAMPLE_PLAYER_ID else None

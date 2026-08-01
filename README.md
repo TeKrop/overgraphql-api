@@ -153,6 +153,19 @@ query CareerStats {
 
 An unknown player returns `player: null`.
 
+Search for a player's BattleTag before looking up their profile — results are capped server-side regardless of the requested `limit`:
+
+```graphql
+query FindPlayer {
+  searchPlayers(name: "TeKrop", limit: 5) {
+    playerId
+    username
+    title
+    isPublic
+  }
+}
+```
+
 ## 🐋 Run for production
 
 Ensure you have `docker` and `docker compose` installed, then:

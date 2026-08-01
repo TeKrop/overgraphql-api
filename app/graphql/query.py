@@ -8,6 +8,7 @@ from strawberry.types import Info
 from app.domain import models
 from app.graphql.context import get_client
 from app.graphql.types import Hero, Map, Player
+from app.settings import settings
 
 KeyFilter = Annotated[
     str | None,
@@ -47,6 +48,24 @@ class Query:
             hero = await get_client(info).get_hero(key)
             return [] if hero is None else [Hero.from_domain(hero)]
         return [Hero.from_domain(hero) for hero in await get_client(info).get_heroes()]
+
+    @strawberry.field(description="Search players by nickname or BattleTag")
+    async def search_players(
+        self,
+        info: Info,
+        name: Annotated[
+            str,
+            strawberry.argument(description="Nickname or BattleTag to search for"),
+        ],
+        limit: Annotated[
+            int,
+            strawberry.argument(
+                description="Maximum number of results, capped server-side"
+            ),
+        ] = 10,
+    ) -> list[models.PlayerSearchResult]:
+        limit = max(1, min(limit, settings.max_player_search_results))
+        return await get_client(info).search_players(name, limit)
 
     @strawberry.field(
         description="Overwatch 2 player, identified by BattleTag. "

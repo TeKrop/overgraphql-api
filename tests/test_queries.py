@@ -1,6 +1,7 @@
 from app.domain.models import Platform, PlayerGamemode
 from app.domain.ports import OverFastPort
 from app.graphql.schema import schema
+from app.settings import settings
 from tests.fakes import FakeOverFastClient
 
 
@@ -116,6 +117,44 @@ async def test_key_filter_on_cached_list_entities():
     assert result.data["gamemodes"] == [{"name": "Escort"}]
     assert result.data["maps"] == [{"name": "Dorado"}]
     assert result.data["missing"] == []
+
+
+async def test_search_players_query():
+    result = await execute(
+        """
+        {
+          searchPlayers(name: "TeKrop") {
+            playerId
+            username
+            title
+            isPublic
+            lastUpdatedAt
+          }
+        }
+        """
+    )
+
+    assert result.errors is None
+    assert result.data["searchPlayers"] == [
+        {
+            "playerId": "TeKrop-2217",
+            "username": "TeKrop",
+            "title": "Bytefixer",
+            "isPublic": True,
+            "lastUpdatedAt": 1750000000,
+        },
+    ]
+
+
+async def test_search_players_clamps_limit_server_side():
+    client = FakeOverFastClient()
+
+    result = await execute(
+        '{ searchPlayers(name: "TeKrop", limit: 1000) { username } }', client
+    )
+
+    assert result.errors is None
+    assert client.last_search_args == ("TeKrop", settings.max_player_search_results)
 
 
 async def test_player_query_flattens_profile():

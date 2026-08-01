@@ -154,6 +154,20 @@ Story = register(
     },
 )
 
+PlayerSearchResult = register(
+    models.PlayerSearchResult,
+    "Single match from a player search",
+    {
+        "player_id": "Identifier of the player: BattleTag with '#' replaced by '-'",
+        "username": "Nickname of the player displayed in the game",
+        "avatar": "URL of the avatar of the player, null if not found",
+        "namecard": "URL of the namecard (or banner) of the player, if any",
+        "title": "Title of the player, if any",
+        "is_public": "Whether the player's profile is public, null if unknown",
+        "last_updated_at": "Unix timestamp of the last profile update on Blizzard side",
+    },
+)
+
 Endorsement = register(
     models.Endorsement,
     "Endorsement details of a player",

@@ -35,6 +35,7 @@ from app.domain.models import (
     Platform,
     PlatformCompetitiveRanks,
     PlayerGamemode,
+    PlayerSearchResult,
     PlayerStatsSummary,
     PlayerSummary,
     Role,
@@ -123,6 +124,15 @@ class OverFastClient:
             return hero
 
     # Player entity
+
+    async def search_players(self, name: str, limit: int) -> list[PlayerSearchResult]:
+        data = await self._get_json(
+            "/players", params={"name": name, "limit": str(limit)}
+        )
+        if data is None:
+            msg = "OverFast API answered 404 on /players"
+            raise UpstreamError(msg)
+        return [_parse_player_search_result(item) for item in data["results"]]
 
     async def get_player_summary(self, player_id: str) -> PlayerSummary | None:
         data = await self._get_json(f"/players/{player_id}/summary")
@@ -315,6 +325,18 @@ def _parse_story(data: dict[str, Any]) -> Story:
             )
             for item in data["chapters"]
         ],
+    )
+
+
+def _parse_player_search_result(data: dict[str, Any]) -> PlayerSearchResult:
+    return PlayerSearchResult(
+        player_id=data["player_id"],
+        username=data["name"],
+        avatar=data.get("avatar"),
+        namecard=data.get("namecard"),
+        title=data.get("title"),
+        is_public=data.get("is_public"),
+        last_updated_at=data.get("last_updated_at"),
     )
 
 

@@ -147,6 +147,21 @@ class Hero:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class PlayerSearchResult:
+    """Single match from a player search, distinct from PlayerSummary: a
+    lighter shape returned in bulk, without rank/endorsement details.
+    """
+
+    player_id: str
+    username: str
+    avatar: str | None
+    namecard: str | None
+    title: str | None
+    is_public: bool | None
+    last_updated_at: int | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Endorsement:
     level: int
     frame: str

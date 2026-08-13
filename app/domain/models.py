@@ -36,6 +36,7 @@ class CompetitiveDivision(StrEnum):
     SILVER = "silver"
     GOLD = "gold"
     PLATINUM = "platinum"
+    EMERALD = "emerald"
     DIAMOND = "diamond"
     MASTER = "master"
     GRANDMASTER = "grandmaster"

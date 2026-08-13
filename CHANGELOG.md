@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.4.0 (2026-08-13)
+
+### Features
+
+- Add emerald competitive division ([#23](https://github.com/TeKrop/overgraphql-api/pull/23),
+  [`9941e12`](https://github.com/TeKrop/overgraphql-api/commit/9941e1251c02c4639dde1957f7ecd5eecbca35de))
+
+
 ## v1.3.0 (2026-08-01)
 
 ### Features

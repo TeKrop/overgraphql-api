@@ -304,4 +304,4 @@ class HeroStats:
     pickrate: float
     winrate: float
     # Banrate is only tracked in the competitive gamemode
-    banrate: float | None
+    banrate: float | None = None

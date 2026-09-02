@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v1.5.0 (2026-09-02)
+
+### Build System
+
+- **deps**: Bump astral-sh/setup-uv from 9.0.0 to 10.0.1
+  ([#24](https://github.com/TeKrop/overgraphql-api/pull/24),
+  [`481814e`](https://github.com/TeKrop/overgraphql-api/commit/481814ec0dcb5008fdf3dccc54a739a22e8b1c49))
+
+### Features
+
+- Added ban rate in heroes stats ([#26](https://github.com/TeKrop/overgraphql-api/pull/26),
+  [`3287c69`](https://github.com/TeKrop/overgraphql-api/commit/3287c69422e4be4416245cdc5063d7c4b3609461))
+
+
 ## v1.4.0 (2026-08-13)
 
 ### Features

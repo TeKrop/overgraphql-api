@@ -267,6 +267,7 @@ async def test_hero_stats_query_passes_args():
             ) {
               pickrate
               winrate
+              banrate
             }
           }
         }
@@ -283,7 +284,9 @@ async def test_hero_stats_query_passes_args():
         "hanaoka",
         CompetitiveDivision.DIAMOND,
     )
-    assert result.data["heroes"] == [{"stats": {"pickrate": 12.5, "winrate": 52.3}}]
+    assert result.data["heroes"] == [
+        {"stats": {"pickrate": 12.5, "winrate": 52.3, "banrate": 3.1}}
+    ]
 
 
 async def test_hero_stats_query_optional_args_default_to_none():

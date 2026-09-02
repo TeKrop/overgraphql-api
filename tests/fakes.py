@@ -118,7 +118,7 @@ SAMPLE_STATS_SUMMARY = models.PlayerStatsSummary(
     heroes=[models.HeroStatsEntry(hero="ana", stats=SAMPLE_STATS)],
 )
 
-SAMPLE_HERO_STATS = models.HeroStats(pickrate=12.5, winrate=52.3)
+SAMPLE_HERO_STATS = models.HeroStats(pickrate=12.5, winrate=52.3, banrate=3.1)
 
 SAMPLE_CAREER_STATS = [
     models.HeroCareerStatsEntry(

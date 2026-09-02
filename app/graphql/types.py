@@ -315,10 +315,12 @@ HeroCareerStatsEntry = register(
 
 HeroStats = register(
     models.HeroStats,
-    "Pickrate and winrate of a hero, for a given platform/gamemode/region",
+    "Pickrate, winrate and banrate of a hero, for a given platform/gamemode/region",
     {
         "pickrate": "Pickrate of the hero (in percent)",
         "winrate": "Winrate of the hero (in percent)",
+        "banrate": "Banrate of the hero (in percent), null outside the "
+        "competitive gamemode",
     },
 )
 
@@ -364,9 +366,10 @@ class Hero:
         return role
 
     @strawberry.field(
-        description="Pickrate and winrate for this hero, for a given platform, "
-        "gamemode and region, optionally narrowed to a map or competitive "
-        "division. Null if OverFast has no data for this combination."
+        description="Pickrate, winrate and banrate for this hero, for a given "
+        "platform, gamemode and region, optionally narrowed to a map or "
+        "competitive division. Banrate is null outside the competitive "
+        "gamemode. Null if OverFast has no data for this combination."
     )
     async def stats(
         self,

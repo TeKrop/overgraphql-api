@@ -524,6 +524,11 @@ def _parse_career_stats(data: dict[str, Any]) -> list[HeroCareerStatsEntry]:
 
 def _parse_hero_stats(data: list[dict[str, Any]]) -> dict[str, HeroStats]:
     return {
-        entry["hero"]: HeroStats(pickrate=entry["pickrate"], winrate=entry["winrate"])
+        entry["hero"]: HeroStats(
+            pickrate=entry["pickrate"],
+            winrate=entry["winrate"],
+            # Omitted from the payload outside the competitive gamemode
+            banrate=entry.get("banrate"),
+        )
         for entry in data
     }

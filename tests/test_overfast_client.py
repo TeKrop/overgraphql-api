@@ -372,8 +372,8 @@ async def test_get_player_stats_sends_params_and_flattens(make_client: MakeClien
 
 async def test_get_hero_stats_sends_params_and_parses(make_client: MakeClient):
     payload = [
-        {"hero": "ana", "pickrate": 12.5, "winrate": 52.3},
-        {"hero": "reinhardt", "pickrate": 8.1, "winrate": 49.7},
+        {"hero": "ana", "pickrate": 12.5, "winrate": 52.3, "banrate": 3.1},
+        {"hero": "reinhardt", "pickrate": 8.1, "winrate": 49.7, "banrate": 1.2},
     ]
     client, calls = make_client({"/heroes/stats": payload})
 
@@ -396,6 +396,21 @@ async def test_get_hero_stats_sends_params_and_parses(make_client: MakeClient):
     assert stats is not None
     assert stats.pickrate == 12.5
     assert stats.winrate == 52.3
+    assert stats.banrate == 3.1
+
+
+async def test_get_hero_stats_omits_banrate_outside_competitive(
+    make_client: MakeClient,
+):
+    payload = [{"hero": "ana", "pickrate": 12.5, "winrate": 52.3}]
+    client, _ = make_client({"/heroes/stats": payload})
+
+    stats = await client.get_hero_stats(
+        "ana", Platform.PC, PlayerGamemode.QUICKPLAY, Region.EUROPE
+    )
+
+    assert stats is not None
+    assert stats.banrate is None
 
 
 async def test_get_hero_stats_omits_unset_optional_params(make_client: MakeClient):

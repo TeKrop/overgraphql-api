@@ -299,7 +299,9 @@ class HeroCareerStatsEntry:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class HeroStats:
-    """Pickrate/winrate of a single hero, for a given platform/gamemode/region"""
+    """Pickrate/winrate/banrate of a single hero, for a given platform/gamemode/region"""
 
     pickrate: float
     winrate: float
+    # Banrate is only tracked in the competitive gamemode
+    banrate: float | None

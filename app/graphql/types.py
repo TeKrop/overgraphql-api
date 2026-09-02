@@ -315,10 +315,12 @@ HeroCareerStatsEntry = register(
 
 HeroStats = register(
     models.HeroStats,
-    "Pickrate and winrate of a hero, for a given platform/gamemode/region",
+    "Pickrate, winrate and banrate of a hero, for a given platform/gamemode/region",
     {
         "pickrate": "Pickrate of the hero (in percent)",
         "winrate": "Winrate of the hero (in percent)",
+        "banrate": "Banrate of the hero (in percent), null outside the "
+        "competitive gamemode",
     },
 )
 

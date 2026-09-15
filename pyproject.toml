@@ -22,6 +22,7 @@ Issues = "https://github.com/TeKrop/overgraphql-api/issues"
 
 [dependency-groups]
 dev = [
+    "import-linter==2.15.*",
     "pytest==9.1.*",
     "pytest-asyncio==1.4.*",
     "pytest-cov==7.1.*",
@@ -135,3 +136,36 @@ known-first-party = ["app"]
 
 [tool.ruff.lint.pylint]
 max-args = 6  # Hero.stats/get_hero_stats mirror OverFast's 5-filter /heroes/stats endpoint
+
+# Architecture contracts, checked by `uv run lint-imports` (just lint, CI)
+[tool.importlinter]
+root_package = "app"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+id = "layers"
+name = "Hexagonal layers: dependencies flow inward only"
+type = "layers"
+containers = ["app"]
+layers = [
+    "main",
+    "graphql | adapters",  # independent: graphql reaches adapters only through OverFastPort
+    "logging_config",
+    "settings",
+    "domain",
+]
+exhaustive = true
+
+[[tool.importlinter.contracts]]
+id = "domain-pure"
+name = "Domain stays framework- and I/O-agnostic"
+type = "forbidden"
+source_modules = ["app.domain"]
+forbidden_modules = ["strawberry", "starlette", "httpx2", "cachetools", "pydantic_settings"]
+broken_contract_guidance = "Keep app.domain to stdlib dataclasses/enums: reach upstream through app.domain.ports.OverFastPort, raise app.domain.exceptions.UpstreamError, do GraphQL mapping in app.graphql.types."
+
+[[tool.importlinter.contracts]]
+id = "acyclic"
+name = "No dependency cycles between sibling packages"
+type = "acyclic_siblings"
+ancestors = ["app"]

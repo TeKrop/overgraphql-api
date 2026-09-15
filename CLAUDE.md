@@ -15,7 +15,7 @@ just build              # build dev image (run first, and after dependency chang
 just start              # run app with autoreload on localhost:8000
 just test                       # run full suite with coverage (html report -> htmlcov/)
 just test "tests/test_queries.py::test_heroes_query"   # run a single test
-just lint                       # ruff check --fix
+just lint                       # ruff check --fix + import-linter contracts
 just format                     # ruff format
 just check                      # ty type checker
 just check app/graphql          # ty on a subpath
@@ -29,6 +29,12 @@ just exec "<command>"           # run an arbitrary command in the app container
 ## Architecture
 
 Hexagonal-lite, dependencies flow inward only, in `app/`:
+
+```
+main → graphql | adapters → logging_config → settings → domain
+```
+
+Enforced by import-linter (`[tool.importlinter]` in `pyproject.toml`, `uv run lint-imports`, run by `just lint` and CI): `graphql` and `adapters` never import each other (so only `main` imports the concrete adapter), `domain` imports no framework or I/O library, and there are no import cycles between sibling modules. A new top-level module under `app/` must be added to the `layers` contract (`exhaustive = true`).
 
 - **`app/domain/`** — plain frozen dataclasses (`models.py`) and a single `typing.Protocol` port (`ports.py`, `OverFastPort`). No framework imports. Hero/map/gamemode keys are plain `str` on purpose (new Blizzard content flows through without a schema change); only closed sets (`RoleKey`, `Platform`, `PlayerGamemode`) are `StrEnum`. `exceptions.py::UpstreamError` is raised both by the adapter (unexpected upstream status) and by `graphql/types.py` (an upstream response that violates an invariant, e.g. a hero referencing a role that doesn't exist) — it always means "upstream data didn't match our assumptions," never a client-input problem.
 - **`app/adapters/overfast_client.py`** — the only implementation of `OverFastPort`. Owns HTTP (httpx2), caching, request coalescing, pacing, and REST→domain parsing (`_parse_*` functions at the bottom of the file).

@@ -8,23 +8,7 @@ OverGraphQL API is a pure GraphQL facade over [OverFast API](https://github.com/
 
 ## Commands
 
-All dev commands run inside Docker via `just` (requires `docker`, `docker compose`, `just`):
-
-```shell
-just build              # build dev image (run first, and after dependency changes)
-just start              # run app with autoreload on localhost:8000
-just test                       # run full suite with coverage (html report -> htmlcov/)
-just test "tests/test_queries.py::test_heroes_query"   # run a single test
-just lint                       # ruff check --fix + import-linter contracts
-just format                     # ruff format
-just check                      # ty type checker
-just check app/graphql          # ty on a subpath
-just lock                       # uv lock --upgrade
-just shell                      # interactive shell in the app container
-just exec "<command>"           # run an arbitrary command in the app container
-```
-
-`just up` / `just down` build and run the production compose stack. There's no host-side venv workflow documented — use the `just` recipes, which mount `app/`, `tests/`, `htmlcov/` into the container.
+All dev commands run inside Docker via `just` (see `justfile` / `just --list`; requires `docker`, `docker compose`, `just`). There's no host-side venv workflow — use the `just` recipes, which mount `app/`, `tests/`, `htmlcov/` into the container.
 
 ## Architecture
 
@@ -55,10 +39,6 @@ Most domain dataclasses need zero mapping code: `register(model, description, fi
 ### Guardrails
 
 Query depth, alias count, and document token size are enforced via strawberry extensions in `schema.py`, configured from `Settings` (`MAX_QUERY_DEPTH`, `MAX_QUERY_ALIASES`, `MAX_QUERY_TOKENS`). GraphiQL and introspection are intentionally left enabled — this is a public API and they serve as its documentation. See `tests/test_guardrails.py`.
-
-### Settings (`app/settings.py`)
-
-Pydantic-settings `BaseSettings`, loaded from env vars or `.env`. Key ones: `OVERFAST_API_URL`, `STATIC_DATA_TTL`, `UPSTREAM_REQUESTS_PER_SECOND`, `MAX_QUERY_DEPTH`, `MAX_QUERY_ALIASES`, `MAX_QUERY_TOKENS`, `LOG_LEVEL`.
 
 ## Testing conventions
 

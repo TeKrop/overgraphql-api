@@ -36,7 +36,7 @@ jobs:
 
       - name: Setup | uv
         if: steps.release.outputs.released == 'true'
-        uses: astral-sh/setup-uv@v10.1.0
+        uses: astral-sh/setup-uv@v10.3.2
         with:
           version: "0.13.5"
 

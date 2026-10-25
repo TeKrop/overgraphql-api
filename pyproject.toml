@@ -7,13 +7,13 @@ authors = [
   { name = "Valentin PORCHET", email = "valentin.porchet@proton.me" },
 ]
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.15"
 dependencies = [
-    "cachetools==7.1.*",
-    "httpx2==2.5.*",
-    "pydantic-settings==2.14.*",
-    "strawberry-graphql[asgi]==0.320.*",
-    "uvicorn==0.51.*",
+    "cachetools==7.2.*",
+    "httpx2==2.16.*",
+    "pydantic-settings==2.16.*",
+    "strawberry-graphql[asgi]==0.337.*",
+    "uvicorn==0.54.*",
 ]
 
 [project.urls]
@@ -26,7 +26,7 @@ dev = [
     "pytest==9.1.*",
     "pytest-asyncio==1.4.*",
     "pytest-cov==7.1.*",
-    "ruff==0.15.*",
+    "ruff==0.17.*",
     "ty==0.0.*",
 ]
 
@@ -53,7 +53,7 @@ asyncio_mode = "auto"
 
 [tool.ruff]
 src = ["app", "tests"]
-target-version = "py314"
+target-version = "py315"
 
 [tool.ruff.lint]
 select = [

@@ -186,6 +186,7 @@ async def test_get_maps_parses(make_client: MakeClient):
             "name": "Aatlis",
             "screenshot": "screen",
             "gamemodes": ["flashpoint"],
+            "uses": ["standard", "stadium"],
             "location": "Morocco",
             "country_code": None,
         },
@@ -196,6 +197,7 @@ async def test_get_maps_parses(make_client: MakeClient):
 
     assert maps[0].key == "aatlis"
     assert maps[0].gamemodes == ["flashpoint"]
+    assert maps[0].uses == ["standard", "stadium"]
     assert maps[0].country_code is None
 
 
@@ -530,3 +532,13 @@ async def test_upstream_error_raises():
         await client.get_roles()
 
     await client.aclose()
+
+
+async def test_get_hero_accepts_null_portrait(make_client: MakeClient):
+    heroes = [{**HEROES[0], "portrait": None}]
+    client, _ = make_client({"/heroes": heroes, "/heroes/ana": HERO_ANA})
+
+    hero = await client.get_hero("ana")
+
+    assert hero is not None
+    assert hero.portrait is None

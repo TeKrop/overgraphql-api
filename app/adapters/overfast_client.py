@@ -318,6 +318,7 @@ def _parse_map(data: dict[str, Any]) -> Map:
         name=data["name"],
         screenshot=data["screenshot"],
         gamemodes=list(data["gamemodes"]),
+        uses=list(data["uses"]),
         location=data["location"],
         country_code=data.get("country_code"),
     )

@@ -329,7 +329,9 @@ HeroStats = register(
 class Hero:
     key: str = strawberry.field(description="Key name of the hero")
     name: str = strawberry.field(description="Name of the hero")
-    portrait: str = strawberry.field(description="Portrait picture URL of the hero")
+    portrait: str | None = strawberry.field(
+        description="Portrait picture URL of the hero, null for a few days after its release"
+    )
     subrole: str = strawberry.field(description="Sub-Role of the hero")
     gamemodes: list[str] = strawberry.field(
         description="Key names of the gamemodes in which the hero is playable"
@@ -501,6 +503,9 @@ class Map:
     key: str = strawberry.field(description="Key name of the map")
     name: str = strawberry.field(description="Name of the map")
     screenshot: str = strawberry.field(description="Screenshot URL of the map")
+    uses: list[str] = strawberry.field(
+        description="Uses of the map: standard, stadium, workshop, arcade or training"
+    )
     location: str = strawberry.field(description="Location of the map")
     country_code: str | None = strawberry.field(
         description="Country code of the map location, null if not in a real country"
@@ -519,6 +524,7 @@ class Map:
             key=map_.key,
             name=map_.name,
             screenshot=map_.screenshot,
+            uses=map_.uses,
             location=map_.location,
             country_code=map_.country_code,
             gamemode_keys=map_.gamemodes,

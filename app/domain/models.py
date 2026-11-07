@@ -69,6 +69,8 @@ class Map:
     screenshot: str
     # Gamemode keys, resolved to Gamemode entities by the API layer
     gamemodes: list[str]
+    # Map uses (standard, stadium, workshop, arcade, training...)
+    uses: list[str]
     location: str
     country_code: str | None
 
@@ -144,7 +146,8 @@ class Hero:
 
     key: str
     name: str
-    portrait: str
+    # Null for a few days after a hero release
+    portrait: str | None
     role: RoleKey
     subrole: str
     gamemodes: list[str]

@@ -22,6 +22,7 @@ SAMPLE_MAP = models.Map(
     name="Dorado",
     screenshot="https://example.com/dorado.jpg",
     gamemodes=["escort"],
+    uses=["standard"],
     location="Mexico",
     country_code="MX",
 )

@@ -2,6 +2,39 @@
 
 <!-- version list -->
 
+## v1.5.1 (2026-11-07)
+
+### Bug Fixes
+
+- Nullable hero portrait and expose map uses
+  ([#35](https://github.com/TeKrop/overgraphql-api/pull/35),
+  [`68f0f7c`](https://github.com/TeKrop/overgraphql-api/commit/68f0f7c721f4bb4dc681a37b9402bb1fcece3d78))
+
+### Build System
+
+- Upgrade to Python 3.15 and bump dependencies
+  ([#32](https://github.com/TeKrop/overgraphql-api/pull/32),
+  [`1c8cfb0`](https://github.com/TeKrop/overgraphql-api/commit/1c8cfb02eeffcd5538c7cca4d5235798b71c546d))
+
+- **deps**: Bump astral-sh/setup-uv from 10.0.1 to 10.1.0
+  ([#28](https://github.com/TeKrop/overgraphql-api/pull/28),
+  [`02a97f2`](https://github.com/TeKrop/overgraphql-api/commit/02a97f2e22fce9ca2fc000ab6e1652fa5b2c84ae))
+
+- **deps**: Bump python-semantic-release/python-semantic-release from 10.6.1 to 10.6.2
+  ([#25](https://github.com/TeKrop/overgraphql-api/pull/25),
+  [`0cbdf13`](https://github.com/TeKrop/overgraphql-api/commit/0cbdf133eef7a0d870bc4cb91447c69989a06ff3))
+
+### Documentation
+
+- Trim derivable content from CLAUDE.md
+  ([`a031128`](https://github.com/TeKrop/overgraphql-api/commit/a0311285643ef0d64e337317d0e5b99a09b16cf2))
+
+### Refactoring
+
+- Enforce DDD layering with import-linter ([#27](https://github.com/TeKrop/overgraphql-api/pull/27),
+  [`c874d97`](https://github.com/TeKrop/overgraphql-api/commit/c874d970463707946dd150cad6ff2083106d1f74))
+
+
 ## v1.5.0 (2026-09-02)
 
 ### Build System

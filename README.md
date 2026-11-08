@@ -203,7 +203,7 @@ just start    # run the app with autoreload on localhost:8000
 just test     # run tests with coverage
 just lint     # ruff linter + import-linter contracts
 just format   # ruff formatter
-just check    # ty type checker
+just check    # pyrefly type checker
 just lock     # update uv.lock
 ```
 

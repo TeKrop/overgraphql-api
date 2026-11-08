@@ -27,6 +27,7 @@ async def test_roles_query():
     result = await execute("{ roles { key name icon description } }")
 
     assert result.errors is None
+    assert result.data is not None
     assert result.data == {
         "roles": [
             {
@@ -43,6 +44,7 @@ async def test_gamemodes_query():
     result = await execute("{ gamemodes { key name screenshot } }")
 
     assert result.errors is None
+    assert result.data is not None
     assert result.data["gamemodes"] == [
         {
             "key": "escort",
@@ -56,6 +58,7 @@ async def test_maps_query_resolves_gamemode_relation():
     result = await execute("{ maps { key countryCode gamemodes { name } } }")
 
     assert result.errors is None
+    assert result.data is not None
     assert result.data["maps"] == [
         {"key": "dorado", "countryCode": "MX", "gamemodes": [{"name": "Escort"}]},
     ]
@@ -79,6 +82,7 @@ async def test_heroes_query_with_nested_details():
     )
 
     assert result.errors is None
+    assert result.data is not None
     hero = result.data["heroes"][0]
     assert hero["key"] == "ana"
     assert hero["age"] == 60
@@ -92,6 +96,7 @@ async def test_heroes_query_with_key_resolves_role_relation():
     result = await execute('{ heroes(key: "ana") { name role { key name } } }')
 
     assert result.errors is None
+    assert result.data is not None
     assert result.data["heroes"] == [
         {"name": "Ana", "role": {"key": "SUPPORT", "name": "Support"}},
     ]
@@ -101,6 +106,7 @@ async def test_heroes_query_with_unknown_key_returns_empty_list():
     result = await execute('{ heroes(key: "unknown") { name } }')
 
     assert result.errors is None
+    assert result.data is not None
     assert result.data["heroes"] == []
 
 
@@ -117,6 +123,7 @@ async def test_key_filter_on_cached_list_entities():
     )
 
     assert result.errors is None
+    assert result.data is not None
     assert result.data["roles"] == [{"name": "Support"}]
     assert result.data["gamemodes"] == [{"name": "Escort"}]
     assert result.data["maps"] == [{"name": "Dorado"}]
@@ -139,6 +146,7 @@ async def test_search_players_query():
     )
 
     assert result.errors is None
+    assert result.data is not None
     assert result.data["searchPlayers"] == [
         {
             "playerId": "TeKrop-2217",
@@ -158,6 +166,7 @@ async def test_search_players_clamps_limit_server_side():
     )
 
     assert result.errors is None
+    assert result.data is not None
     assert client.last_search_args == ("TeKrop", settings.max_player_search_results)
 
 
@@ -180,6 +189,7 @@ async def test_player_query_flattens_profile():
     )
 
     assert result.errors is None
+    assert result.data is not None
     player = result.data["player"]
     assert player["playerId"] == "TeKrop-2217"
     assert player["username"] == "TeKrop"
@@ -209,6 +219,7 @@ async def test_player_stats_summary_query():
     )
 
     assert result.errors is None
+    assert result.data is not None
     stats_summary = result.data["player"]["statsSummary"]
     assert stats_summary["general"]["gamesPlayed"] == 10
     assert stats_summary["general"]["total"] == {"healing": 30000}
@@ -234,6 +245,7 @@ async def test_player_stats_query_passes_enum_args():
     )
 
     assert result.errors is None
+    assert result.data is not None
     assert client.last_stats_args == (Platform.PC, PlayerGamemode.COMPETITIVE)
     assert result.data["player"]["careerStats"] == [
         {
@@ -276,6 +288,7 @@ async def test_hero_stats_query_passes_args():
     )
 
     assert result.errors is None
+    assert result.data is not None
     assert client.last_hero_stats_args == (
         "ana",
         Platform.PC,
@@ -299,6 +312,7 @@ async def test_hero_stats_query_optional_args_default_to_none():
     )
 
     assert result.errors is None
+    assert result.data is not None
     assert client.last_hero_stats_args == (
         "ana",
         Platform.PC,
@@ -322,6 +336,7 @@ async def test_hero_stats_query_returns_null_when_no_data_for_hero():
     )
 
     assert result.errors is None
+    assert result.data is not None
     assert result.data["heroes"] == [{"stats": None}]
 
 
@@ -329,4 +344,5 @@ async def test_player_unknown_id_returns_null():
     result = await execute('{ player(playerId: "Unknown-1234") { username } }')
 
     assert result.errors is None
+    assert result.data is not None
     assert result.data["player"] is None

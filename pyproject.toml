@@ -157,11 +157,10 @@ layers = [
 exhaustive = true
 
 [tool.pyrefly]
+project-includes = ["app", "tests"]
+python-version = "3.15"
 preset = "strict"
-project-includes = [
-    "**/*.py*",
-    "**/*.ipynb",
-]
+min-severity = "warn"
 
 [[tool.importlinter.contracts]]
 id = "domain-pure"

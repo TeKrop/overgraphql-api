@@ -9,6 +9,28 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Hashable
 
+    from app.adapters.overfast_types import (
+        AbilityPayload,
+        CareerStatsPayload,
+        CompetitiveRanksPayload,
+        GamemodePayload,
+        HeroDetailPayload,
+        HeroEntryPayload,
+        HeroStatsPayload,
+        HitPointsPayload,
+        MapPayload,
+        PerkPayload,
+        PlatformRanksPayload,
+        PlayerSearchPayload,
+        PlayerSearchResultPayload,
+        PlayerStatsSummaryPayload,
+        PlayerSummaryPayload,
+        RankPayload,
+        RolePayload,
+        StatsSummaryPayload,
+        StoryPayload,
+    )
+
 import httpx2
 from cachetools import TTLCache
 
@@ -73,7 +95,8 @@ class OverFastClient:
             base_url=base_url, timeout=30, transport=transport
         )
         # ponytail: unbounded-enough single cache; entries = raw JSON of static
-        # collections + assembled Hero objects (~50 total)
+        # collections + assembled Hero objects (~50 total). Values are
+        # heterogeneous, so `Any` stays here; _get_cached[T] types the callers.
         self._cache: TTLCache[Hashable, Any] = TTLCache(
             maxsize=256, ttl=static_data_ttl
         )
@@ -92,13 +115,16 @@ class OverFastClient:
     # Static entities
 
     async def get_roles(self) -> list[Role]:
-        return [_parse_role(item) for item in await self._get_static("/roles")]
+        roles: list[RolePayload] = await self._get_static("/roles")
+        return [_parse_role(item) for item in roles]
 
     async def get_gamemodes(self) -> list[Gamemode]:
-        return [_parse_gamemode(item) for item in await self._get_static("/gamemodes")]
+        gamemodes: list[GamemodePayload] = await self._get_static("/gamemodes")
+        return [_parse_gamemode(item) for item in gamemodes]
 
     async def get_maps(self) -> list[Map]:
-        return [_parse_map(item) for item in await self._get_static("/maps")]
+        maps: list[MapPayload] = await self._get_static("/maps")
+        return [_parse_map(item) for item in maps]
 
     async def get_heroes(self) -> list[Hero]:
         index = await self._heroes_index()
@@ -120,7 +146,7 @@ class OverFastClient:
             if (cached := self._cache.get(cache_key)) is not None:
                 return cached
 
-            detail = await self._get_json(f"/heroes/{key}")
+            detail: HeroDetailPayload | None = await self._get_json(f"/heroes/{key}")
             if detail is None:
                 return None
 
@@ -145,7 +171,7 @@ class OverFastClient:
     # Player entity
 
     async def search_players(self, name: str, limit: int) -> list[PlayerSearchResult]:
-        data = await self._get_json(
+        data: PlayerSearchPayload | None = await self._get_json(
             "/players", params={"name": name, "limit": str(limit)}
         )
         if data is None:
@@ -154,13 +180,17 @@ class OverFastClient:
         return [_parse_player_search_result(item) for item in data["results"]]
 
     async def get_player_summary(self, player_id: str) -> PlayerSummary | None:
-        data = await self._get_json(f"/players/{player_id}/summary")
+        data: PlayerSummaryPayload | None = await self._get_json(
+            f"/players/{player_id}/summary"
+        )
         return None if data is None else _parse_player_summary(data)
 
     async def get_player_stats_summary(
         self, player_id: str
     ) -> PlayerStatsSummary | None:
-        data = await self._get_json(f"/players/{player_id}/stats/summary")
+        data: PlayerStatsSummaryPayload | None = await self._get_json(
+            f"/players/{player_id}/stats/summary"
+        )
         return None if data is None else _parse_player_stats_summary(data)
 
     async def get_player_stats(
@@ -169,7 +199,7 @@ class OverFastClient:
         platform: Platform,
         gamemode: PlayerGamemode,
     ) -> list[HeroCareerStatsEntry] | None:
-        data = await self._get_json(
+        data: CareerStatsPayload | None = await self._get_json(
             f"/players/{player_id}/stats",
             params={"platform": platform.value, "gamemode": gamemode.value},
         )
@@ -177,8 +207,8 @@ class OverFastClient:
 
     # Upstream access
 
-    async def _heroes_index(self) -> dict[str, dict[str, Any]]:
-        entries = await self._get_static("/heroes")
+    async def _heroes_index(self) -> dict[str, HeroEntryPayload]:
+        entries: list[HeroEntryPayload] = await self._get_static("/heroes")
         return {entry["key"]: entry for entry in entries}
 
     async def _get_hero_stats_index(
@@ -209,7 +239,9 @@ class OverFastClient:
             if competitive_division is not None:
                 params["competitive_division"] = competitive_division.value
 
-            data = await self._get_json("/heroes/stats", params=params)
+            data: list[HeroStatsPayload] | None = await self._get_json(
+                "/heroes/stats", params=params
+            )
             if data is None:
                 msg = f"OverFast API answered 404 on /heroes/stats with params {params}"
                 raise UpstreamError(msg)
@@ -217,9 +249,9 @@ class OverFastClient:
 
         return await self._get_cached(cache_key, fetch)
 
-    async def _get_static(self, path: str) -> Any:
-        async def fetch() -> Any:
-            data = await self._get_json(path)
+    async def _get_static[T](self, path: str) -> T:
+        async def fetch() -> T:
+            data: T | None = await self._get_json(path)
             if data is None:
                 msg = f"OverFast API answered 404 on {path}"
                 raise UpstreamError(msg)
@@ -246,9 +278,12 @@ class OverFastClient:
             self._cache[cache_key] = value
             return value
 
-    async def _get_json(
+    async def _get_json[T](
         self, path: str, params: dict[str, str] | None = None
-    ) -> Any | None:
+    ) -> T | None:
+        """The untyped edge: `T` is the payload shape the caller expects and
+        nothing checks the JSON against it (see overfast_types.py).
+        """
         response = await self._paced_get(path, params)
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             # Shared IP budget: honor Retry-After and retry once
@@ -287,13 +322,11 @@ class OverFastClient:
 # Parsers: raw OverFast JSON -> domain models
 
 
-def _opt[T](
-    parse: Callable[[dict[str, Any]], T], data: dict[str, Any] | None
-) -> T | None:
+def _opt[P, T](parse: Callable[[P], T], data: P | None) -> T | None:
     return None if data is None else parse(data)
 
 
-def _parse_role(data: dict[str, Any]) -> Role:
+def _parse_role(data: RolePayload) -> Role:
     return Role(
         key=RoleKey(data["key"]),
         name=data["name"],
@@ -302,7 +335,7 @@ def _parse_role(data: dict[str, Any]) -> Role:
     )
 
 
-def _parse_gamemode(data: dict[str, Any]) -> Gamemode:
+def _parse_gamemode(data: GamemodePayload) -> Gamemode:
     return Gamemode(
         key=data["key"],
         name=data["name"],
@@ -312,7 +345,7 @@ def _parse_gamemode(data: dict[str, Any]) -> Gamemode:
     )
 
 
-def _parse_map(data: dict[str, Any]) -> Map:
+def _parse_map(data: MapPayload) -> Map:
     return Map(
         key=data["key"],
         name=data["name"],
@@ -324,7 +357,7 @@ def _parse_map(data: dict[str, Any]) -> Map:
     )
 
 
-def _parse_hero(entry: dict[str, Any], detail: dict[str, Any]) -> Hero:
+def _parse_hero(entry: HeroEntryPayload, detail: HeroDetailPayload) -> Hero:
     return Hero(
         key=entry["key"],
         name=entry["name"],
@@ -355,7 +388,7 @@ def _parse_hero(entry: dict[str, Any], detail: dict[str, Any]) -> Hero:
     )
 
 
-def _parse_hitpoints(data: dict[str, Any]) -> HitPoints:
+def _parse_hitpoints(data: HitPointsPayload) -> HitPoints:
     return HitPoints(
         health=data["health"],
         armor=data["armor"],
@@ -364,7 +397,7 @@ def _parse_hitpoints(data: dict[str, Any]) -> HitPoints:
     )
 
 
-def _parse_ability(data: dict[str, Any]) -> Ability:
+def _parse_ability(data: AbilityPayload) -> Ability:
     video = data["video"]
     return Ability(
         name=data["name"],
@@ -378,11 +411,11 @@ def _parse_ability(data: dict[str, Any]) -> Ability:
     )
 
 
-def _parse_perk(data: dict[str, Any]) -> Perk:
+def _parse_perk(data: PerkPayload) -> Perk:
     return Perk(name=data["name"], description=data["description"], icon=data["icon"])
 
 
-def _parse_story(data: dict[str, Any]) -> Story:
+def _parse_story(data: StoryPayload) -> Story:
     media = data.get("media")
     return Story(
         summary=data["summary"],
@@ -396,7 +429,7 @@ def _parse_story(data: dict[str, Any]) -> Story:
     )
 
 
-def _parse_player_search_result(data: dict[str, Any]) -> PlayerSearchResult:
+def _parse_player_search_result(data: PlayerSearchResultPayload) -> PlayerSearchResult:
     return PlayerSearchResult(
         player_id=data["player_id"],
         username=data["name"],
@@ -408,7 +441,7 @@ def _parse_player_search_result(data: dict[str, Any]) -> PlayerSearchResult:
     )
 
 
-def _parse_player_summary(data: dict[str, Any]) -> PlayerSummary:
+def _parse_player_summary(data: PlayerSummaryPayload) -> PlayerSummary:
     endorsement = data.get("endorsement")
     return PlayerSummary(
         username=data["username"],
@@ -425,14 +458,14 @@ def _parse_player_summary(data: dict[str, Any]) -> PlayerSummary:
     )
 
 
-def _parse_competitive_ranks(data: dict[str, Any]) -> CompetitiveRanks:
+def _parse_competitive_ranks(data: CompetitiveRanksPayload) -> CompetitiveRanks:
     return CompetitiveRanks(
         pc=_opt(_parse_platform_ranks, data.get("pc")),
         console=_opt(_parse_platform_ranks, data.get("console")),
     )
 
 
-def _parse_platform_ranks(data: dict[str, Any]) -> PlatformCompetitiveRanks:
+def _parse_platform_ranks(data: PlatformRanksPayload) -> PlatformCompetitiveRanks:
     return PlatformCompetitiveRanks(
         season=data.get("season"),
         tank=_opt(_parse_rank, data.get("tank")),
@@ -442,7 +475,7 @@ def _parse_platform_ranks(data: dict[str, Any]) -> PlatformCompetitiveRanks:
     )
 
 
-def _parse_rank(data: dict[str, Any]) -> CompetitiveRank:
+def _parse_rank(data: RankPayload) -> CompetitiveRank:
     return CompetitiveRank(
         division=data["division"],
         tier=data["tier"],
@@ -452,7 +485,7 @@ def _parse_rank(data: dict[str, Any]) -> CompetitiveRank:
     )
 
 
-def _parse_player_stats_summary(data: dict[str, Any]) -> PlayerStatsSummary:
+def _parse_player_stats_summary(data: PlayerStatsSummaryPayload) -> PlayerStatsSummary:
     roles = data.get("roles")
     return PlayerStatsSummary(
         general=_opt(_parse_stats_summary, data.get("general")),
@@ -472,7 +505,7 @@ def _parse_player_stats_summary(data: dict[str, Any]) -> PlayerStatsSummary:
     )
 
 
-def _parse_stats_summary(data: dict[str, Any]) -> StatsSummary:
+def _parse_stats_summary(data: StatsSummaryPayload) -> StatsSummary:
     total = data["total"]
     average = data["average"]
     return StatsSummary(
@@ -499,7 +532,7 @@ def _parse_stats_summary(data: dict[str, Any]) -> StatsSummary:
     )
 
 
-def _parse_career_stats(data: dict[str, Any]) -> list[HeroCareerStatsEntry]:
+def _parse_career_stats(data: CareerStatsPayload) -> list[HeroCareerStatsEntry]:
     return [
         HeroCareerStatsEntry(
             hero=hero_key,
@@ -523,7 +556,7 @@ def _parse_career_stats(data: dict[str, Any]) -> list[HeroCareerStatsEntry]:
     ]
 
 
-def _parse_hero_stats(data: list[dict[str, Any]]) -> dict[str, HeroStats]:
+def _parse_hero_stats(data: list[HeroStatsPayload]) -> dict[str, HeroStats]:
     return {
         entry["hero"]: HeroStats(
             pickrate=entry["pickrate"],

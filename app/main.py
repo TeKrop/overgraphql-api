@@ -1,7 +1,7 @@
 """Application entrypoint: ASGI app wiring the schema to the OverFast client"""
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, override
 
 from starlette.applications import Starlette
 from starlette.responses import HTMLResponse
@@ -9,6 +9,7 @@ from starlette.routing import Mount, Route
 from strawberry.asgi import GraphQL
 
 from app.adapters.overfast_client import OverFastClient
+from app.graphql.context import Context
 from app.graphql.schema import schema
 from app.logging_config import configure_logging
 from app.settings import settings
@@ -27,7 +28,7 @@ _LANDING_HTML = (_TEMPLATES / "landing.html").read_text()
 _GRAPHIQL_HTML = (_TEMPLATES / "graphiql.html").read_text()
 
 
-class OverGraphQLApp(GraphQL[dict[str, Any], None]):
+class OverGraphQLApp(GraphQL[Context, None]):
     def __init__(self, client: OverFastPort) -> None:
         super().__init__(schema)
         self.client = client
@@ -37,7 +38,7 @@ class OverGraphQLApp(GraphQL[dict[str, Any], None]):
         self,
         request: Request | WebSocket,
         response: Response | WebSocket,
-    ) -> dict[str, Any]:
+    ) -> Context:
         return {"client": self.client}
 
     @override

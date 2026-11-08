@@ -1,6 +1,6 @@
 """GraphQL context accessors (the DI seam between resolvers and the port)"""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
     from strawberry.types import Info
@@ -8,5 +8,9 @@ if TYPE_CHECKING:
     from app.domain.ports import OverFastPort
 
 
-def get_client(info: Info) -> OverFastPort:
+class Context(TypedDict):
+    client: OverFastPort
+
+
+def get_client(info: Info[Context]) -> OverFastPort:
     return info.context["client"]

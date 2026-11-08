@@ -122,7 +122,7 @@ def make_handler(routes: dict[str, object]):
 async def make_client():
     clients: list[OverFastClient] = []
 
-    def _make(routes: dict[str, object]) -> tuple[OverFastClient, list]:
+    def _make(routes: dict[str, object]) -> tuple[OverFastClient, list[httpx2.Request]]:
         handler, calls = make_handler(routes)
         client = OverFastClient(
             base_url="http://testserver",
@@ -142,7 +142,7 @@ async def make_client():
 async def test_adapter_satisfies_port():
     client = OverFastClient(base_url="http://testserver", static_data_ttl=1)
 
-    # Typed assignment makes ty statically verify the adapter satisfies the port
+    # Typed assignment lets the type checker verify the adapter satisfies the port
     port: OverFastPort = client
 
     assert port is client
@@ -535,7 +535,7 @@ async def test_upstream_error_raises():
 
 
 async def test_get_hero_accepts_null_portrait(make_client: MakeClient):
-    heroes = [{**HEROES[0], "portrait": None}]
+    heroes: list[dict[str, object]] = [{**HEROES[0], "portrait": None}]
     client, _ = make_client({"/heroes": heroes, "/heroes/ana": HERO_ANA})
 
     hero = await client.get_hero("ana")

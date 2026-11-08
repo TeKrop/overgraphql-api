@@ -27,7 +27,7 @@ def register[T](model: type[T], description: str, fields: dict[str, str]) -> typ
     strawberry.type(model, description=description)
     strawberry_fields = {
         field.python_name: field
-        for field in model.__strawberry_definition__.fields  # ty: ignore[unresolved-attribute]
+        for field in model.__strawberry_definition__.fields  # pyrefly: ignore[missing-attribute]
     }
     for name, field_description in fields.items():
         strawberry_fields[name].description = field_description

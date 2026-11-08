@@ -15,4 +15,4 @@ def test_model_construction_and_immutability():
 
     assert role.key == "support"
     with pytest.raises(FrozenInstanceError):
-        role.name = "Nope"  # ty: ignore[invalid-assignment]
+        role.name = "Nope"  # pyrefly: ignore[attribute-assign-on-never]

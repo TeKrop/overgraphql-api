@@ -2,11 +2,29 @@
 exposed by the API must carry a description.
 """
 
-from typing import Any
+from typing import TypedDict
 
 import pytest
 
 from app.graphql.schema import schema
+
+
+class ArgInfo(TypedDict):
+    name: str
+    description: str | None
+
+
+class FieldInfo(TypedDict):
+    name: str
+    description: str | None
+    args: list[ArgInfo]
+
+
+class SchemaType(TypedDict):
+    name: str
+    description: str | None
+    fields: list[FieldInfo] | None
+
 
 BUILTIN_SCALARS = {"String", "Int", "Float", "Boolean", "ID"}
 
@@ -30,7 +48,7 @@ INTROSPECTION_QUERY = """
 
 
 @pytest.fixture(scope="module")
-def schema_types() -> list[dict[str, Any]]:
+def schema_types() -> list[SchemaType]:
     result = schema.execute_sync(INTROSPECTION_QUERY)
 
     assert result.errors is None
@@ -43,7 +61,7 @@ def schema_types() -> list[dict[str, Any]]:
     ]
 
 
-def test_every_type_has_a_description(schema_types: list[dict[str, Any]]):
+def test_every_type_has_a_description(schema_types: list[SchemaType]):
     undocumented = [
         schema_type["name"]
         for schema_type in schema_types
@@ -53,7 +71,7 @@ def test_every_type_has_a_description(schema_types: list[dict[str, Any]]):
     assert undocumented == []
 
 
-def test_every_field_has_a_description(schema_types: list[dict[str, Any]]):
+def test_every_field_has_a_description(schema_types: list[SchemaType]):
     undocumented = [
         f"{schema_type['name']}.{field['name']}"
         for schema_type in schema_types
@@ -64,7 +82,7 @@ def test_every_field_has_a_description(schema_types: list[dict[str, Any]]):
     assert undocumented == []
 
 
-def test_every_argument_has_a_description(schema_types: list[dict[str, Any]]):
+def test_every_argument_has_a_description(schema_types: list[SchemaType]):
     undocumented = [
         f"{schema_type['name']}.{field['name']}({arg['name']}:)"
         for schema_type in schema_types

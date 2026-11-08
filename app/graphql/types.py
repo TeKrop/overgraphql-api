@@ -13,6 +13,7 @@ from typing import Annotated
 
 import strawberry
 from strawberry.types import Info
+from strawberry.types.base import get_object_definition
 
 from app.domain import models
 from app.domain.exceptions import UpstreamError
@@ -27,7 +28,7 @@ def register[T](model: type[T], description: str, fields: dict[str, str]) -> typ
     strawberry.type(model, description=description)
     strawberry_fields = {
         field.python_name: field
-        for field in model.__strawberry_definition__.fields  # pyrefly: ignore[missing-attribute]
+        for field in get_object_definition(model, strict=True).fields
     }
     for name, field_description in fields.items():
         strawberry_fields[name].description = field_description

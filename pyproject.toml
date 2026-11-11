@@ -28,6 +28,7 @@ dev = [
     "pytest-cov==7.1.*",
     "ruff==0.17.*",
     "pyrefly==1.4.*",
+    "complexipy==8.3.*",
 ]
 
 [tool.uv]
@@ -177,3 +178,7 @@ id = "acyclic"
 name = "No dependency cycles between sibling packages"
 type = "acyclic_siblings"
 ancestors = ["app"]
+
+[tool.complexipy]
+paths = ["app"]
+max-complexity-allowed = 15

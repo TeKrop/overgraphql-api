@@ -25,5 +25,6 @@ COPY ./app /code/app
 FROM main AS dev
 # grimp (import-linter) has no cp315 musl wheel yet; drop gcc once it does
 RUN apk add --no-cache gcc musl-dev
-RUN uv sync --frozen --no-cache
+# complexipy has no musl wheel and its source build fails to load on Alpine; it runs on the host/CI only
+RUN uv sync --frozen --no-cache --no-install-package complexipy
 COPY ./tests /code/tests
